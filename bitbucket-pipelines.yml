@@ -1,0 +1,65 @@
+image: golang:latest
+pipelines:
+  default:
+    - parallel:
+      - step:
+          name: Linting
+          services:
+              - docker
+          script:
+              # Prepare the environment
+              - export PATH=$HOME/go/bin:$PATH GOPATH=~/go SRCDIR=$HOME/go/src/bitbucket.org/atlassian/vpcflow-digesterd
+              - mkdir -p $HOME/go/bin $HOME/go/src/bitbucket.org/atlassian && ln -s $BITBUCKET_CLONE_DIR $SRCDIR && cd $SRCDIR
+              - apt-get update && apt-get install -y apt-transport-https ca-certificates make curl gcc git
+
+              # Lint
+              - make lint
+
+      - step:
+          name: Tests
+          services:
+              - docker
+          script:
+              # Prepare the environment
+              - export PATH=$HOME/go/bin:$PATH GOPATH=~/go SRCDIR=$HOME/go/src/bitbucket.org/atlassian/vpcflow-digesterd
+              - mkdir -p $HOME/go/bin $HOME/go/src/bitbucket.org/atlassian && ln -s $BITBUCKET_CLONE_DIR $SRCDIR && cd $SRCDIR
+              - apt-get update && apt-get install -y apt-transport-https ca-certificates make curl gcc git
+
+              # Get dependencies
+              - make dep
+
+              # Run the tests
+              - make test
+          artifacts:
+              - .coverage/unit.cover.out
+
+      - step:
+          name: Integration
+          services:
+              - docker
+          script:
+              # Prepare the environment
+              - export PATH=$HOME/go/bin:$PATH GOPATH=~/go SRCDIR=$HOME/go/src/bitbucket.org/atlassian/vpcflow-digesterd
+              - mkdir -p $HOME/go/bin $HOME/go/src/bitbucket.org/atlassian && ln -s $BITBUCKET_CLONE_DIR $SRCDIR && cd $SRCDIR
+              - apt-get update && apt-get install -y apt-transport-https ca-certificates make curl gcc git
+
+              # Get dependencies
+              - make dep
+
+              # Run the integration tests
+              - make integration
+          artifacts:
+              - .coverage/integration.cover.out
+
+    - step:
+        name: Coverage
+        services:
+            - docker
+        script:
+            # Prepare the environment
+            - export PATH=$HOME/go/bin:$PATH GOPATH=~/go SRCDIR=$HOME/go/src/bitbucket.org/atlassian/vpcflow-digesterd
+            - mkdir -p $HOME/go/bin $HOME/go/src/bitbucket.org/atlassian && ln -s $BITBUCKET_CLONE_DIR $SRCDIR && cd $SRCDIR
+            - apt-get update && apt-get install -y apt-transport-https ca-certificates make curl gcc git bc jq
+
+            # Create coverage report
+            - make coverage
