@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"fmt"
 )
 
@@ -16,8 +17,8 @@ func (e *ErrInProgress) Error() string {
 // Storage is an interface for accessing created digests
 type Storage interface {
 	// Get returns the digest for the given key.
-	Get(key string) ([]byte, error)
+	Get(ctx context.Context, key string) ([]byte, error)
 
 	// Exists returns true if the digest exists, but does not download the digest body.
-	Exists(key string) (bool, error)
+	Exists(ctx context.Context, key string) (bool, error)
 }

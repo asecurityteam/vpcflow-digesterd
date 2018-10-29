@@ -4,6 +4,7 @@
 package v1
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -28,24 +29,24 @@ func (_m *MockStorage) EXPECT() *_MockStorageRecorder {
 	return _m.recorder
 }
 
-func (_m *MockStorage) Get(key string) ([]byte, error) {
-	ret := _m.ctrl.Call(_m, "Get", key)
+func (_m *MockStorage) Get(ctx context.Context, key string) ([]byte, error) {
+	ret := _m.ctrl.Call(_m, "Get", ctx, key)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-func (_mr *_MockStorageRecorder) Get(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Get", arg0)
+func (_mr *_MockStorageRecorder) Get(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Get", arg0, arg1)
 }
 
-func (_m *MockStorage) Exists(key string) (bool, error) {
-	ret := _m.ctrl.Call(_m, "Exists", key)
+func (_m *MockStorage) Exists(ctx context.Context, key string) (bool, error) {
+	ret := _m.ctrl.Call(_m, "Exists", ctx, key)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-func (_mr *_MockStorageRecorder) Exists(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Exists", arg0)
+func (_mr *_MockStorageRecorder) Exists(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Exists", arg0, arg1)
 }
