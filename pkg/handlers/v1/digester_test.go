@@ -48,7 +48,7 @@ func TestPostInvalidStop(t *testing.T) {
 
 func TestPostInvalidRange(t *testing.T) {
 	start := time.Now().Format(time.RFC3339Nano)
-	stop := time.Now().Add(-1 * time.Second).Format(time.RFC3339Nano)
+	stop := time.Now().Add(-1 * time.Minute).Format(time.RFC3339Nano)
 	r, _ := http.NewRequest(http.MethodPost, "/", nil)
 	w := httptest.NewRecorder()
 
@@ -78,7 +78,7 @@ func TestPostConflictInProgress(t *testing.T) {
 	r.URL.RawQuery = q.Encode()
 
 	storageMock := NewMockStorage(ctrl)
-	storageMock.EXPECT().Get(gomock.Any()).Return(nil, &types.ErrInProgress{})
+	storageMock.EXPECT().Get(gomock.Any(), false).Return(types.Digest{}, &types.ErrInProgress{})
 
 	h := DigesterHandler{
 		Storage: storageMock,
@@ -103,7 +103,7 @@ func TestPostConflictDigestCreated(t *testing.T) {
 	r.URL.RawQuery = q.Encode()
 
 	storageMock := NewMockStorage(ctrl)
-	storageMock.EXPECT().Get(gomock.Any()).Return([]byte("digest"), nil)
+	storageMock.EXPECT().Get(gomock.Any(), false).Return(types.Digest{Size: 1}, nil)
 
 	h := DigesterHandler{
 		Storage: storageMock,
@@ -128,7 +128,7 @@ func TestPostStorageError(t *testing.T) {
 	r.URL.RawQuery = q.Encode()
 
 	storageMock := NewMockStorage(ctrl)
-	storageMock.EXPECT().Get(gomock.Any()).Return(nil, errors.New("oops"))
+	storageMock.EXPECT().Get(gomock.Any(), false).Return(types.Digest{}, errors.New("oops"))
 
 	h := DigesterHandler{
 		Storage: storageMock,
@@ -153,9 +153,9 @@ func TestPostQueueError(t *testing.T) {
 	r.URL.RawQuery = q.Encode()
 
 	storageMock := NewMockStorage(ctrl)
-	storageMock.EXPECT().Get(gomock.Any()).Return([]byte{}, nil)
+	storageMock.EXPECT().Get(gomock.Any(), false).Return(types.Digest{Size: 0}, nil)
 	queuerMock := NewMockQueuer(ctrl)
-	queuerMock.EXPECT().Queue(gomock.Any(), start.Truncate(time.Second), stop.Truncate(time.Second)).Return(errors.New("oops"))
+	queuerMock.EXPECT().Queue(gomock.Any(), start.Truncate(time.Minute), stop.Truncate(time.Minute)).Return(errors.New("oops"))
 
 	h := DigesterHandler{
 		Storage: storageMock,
@@ -181,9 +181,9 @@ func TestPostHappyPath(t *testing.T) {
 	r.URL.RawQuery = q.Encode()
 
 	storageMock := NewMockStorage(ctrl)
-	storageMock.EXPECT().Get(gomock.Any()).Return([]byte{}, nil)
+	storageMock.EXPECT().Get(gomock.Any(), false).Return(types.Digest{Size: 0}, nil)
 	queuerMock := NewMockQueuer(ctrl)
-	queuerMock.EXPECT().Queue(gomock.Any(), start.Truncate(time.Second), stop.Truncate(time.Second)).Return(nil)
+	queuerMock.EXPECT().Queue(gomock.Any(), start.Truncate(time.Minute), stop.Truncate(time.Minute)).Return(nil)
 
 	h := DigesterHandler{
 		Storage: storageMock,

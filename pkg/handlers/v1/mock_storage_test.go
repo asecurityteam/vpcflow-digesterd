@@ -4,6 +4,7 @@
 package v1
 
 import (
+	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/types"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -28,13 +29,13 @@ func (_m *MockStorage) EXPECT() *_MockStorageRecorder {
 	return _m.recorder
 }
 
-func (_m *MockStorage) Get(key string) ([]byte, error) {
-	ret := _m.ctrl.Call(_m, "Get", key)
-	ret0, _ := ret[0].([]byte)
+func (_m *MockStorage) Get(key string, download bool) (types.Digest, error) {
+	ret := _m.ctrl.Call(_m, "Get", key, download)
+	ret0, _ := ret[0].(types.Digest)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-func (_mr *_MockStorageRecorder) Get(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Get", arg0)
+func (_mr *_MockStorageRecorder) Get(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Get", arg0, arg1)
 }
