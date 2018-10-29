@@ -65,6 +65,26 @@ func TestPostInvalidStop(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
 }
 
+func TestPostInvalidRange(t *testing.T) {
+	start := time.Now().Format(time.RFC3339Nano)
+	stop := time.Now().Add(-1 * time.Second).Format(time.RFC3339Nano)
+	r, _ := http.NewRequest(http.MethodPost, "/", nil)
+	w := httptest.NewRecorder()
+
+	q := r.URL.Query()
+	q.Set("start", start)
+	q.Set("stop", stop)
+	r.URL.RawQuery = q.Encode()
+
+	h := DigesterHandler{
+		LogProvider:      logProvider,
+		LogEventProvider: logEventProvider,
+	}
+	h.Post(w, r)
+
+	assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
+}
+
 func TestPostConflictInProgress(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

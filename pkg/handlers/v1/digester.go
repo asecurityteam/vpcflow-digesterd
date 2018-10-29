@@ -2,6 +2,7 @@ package v1
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -78,6 +79,9 @@ func extractInput(r *http.Request) (time.Time, time.Time, error) {
 	stop, err := time.Parse(time.RFC3339Nano, stopString)
 	if err != nil {
 		return time.Time{}, time.Time{}, err
+	}
+	if start.After(stop) {
+		return time.Time{}, time.Time{}, errors.New("start should be before stop")
 	}
 	return start.Truncate(time.Second), stop.Truncate(time.Second), nil
 }
