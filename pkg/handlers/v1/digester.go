@@ -95,6 +95,7 @@ func computeID(start, stop time.Time) string {
 }
 
 // return a new Event prepopulated with data from the context and the given fields
+// nolint TODO: remove this (unparam) when GET is implemented
 func (h *DigesterHandler) newDigestEvent(ctx context.Context, status int, objectID, result, action string) httplog.Event {
 	e := h.LogEventProvider(ctx)
 	e.Status = status
