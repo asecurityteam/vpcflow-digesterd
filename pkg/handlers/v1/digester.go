@@ -11,6 +11,8 @@ import (
 	"github.com/google/uuid"
 )
 
+var digestNamespace = uuid.NewSHA1(uuid.Nil, []byte("digest"))
+
 // DigesterHandler handles incoming HTTP requests for starting and retrieving new digests
 type DigesterHandler struct {
 	Storage types.Storage
@@ -75,7 +77,7 @@ func extractInput(r *http.Request) (time.Time, time.Time, error) {
 // in that order
 func computeID(start, stop time.Time) string {
 	name := start.String() + stop.String()
-	u := uuid.NewSHA1(uuid.NameSpaceURL, []byte(name))
+	u := uuid.NewSHA1(digestNamespace, []byte(name))
 	return u.String()
 }
 
