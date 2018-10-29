@@ -1,29 +1,16 @@
 package v1
 
 import (
-	"context"
 	"errors"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"bitbucket.org/atlassian/httplog"
-	"bitbucket.org/atlassian/logevent"
-	"bitbucket.org/atlassian/vpcflow-digesterd/mocks"
 	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
-
-func logProvider(_ context.Context) logevent.Logger {
-	return logevent.New(logevent.Config{Output: ioutil.Discard})
-}
-
-func logEventProvider(_ context.Context) httplog.Event {
-	return httplog.Event{}
-}
 
 func TestPostInvalidStart(t *testing.T) {
 	start := ""
@@ -36,10 +23,7 @@ func TestPostInvalidStart(t *testing.T) {
 	q.Set("stop", stop)
 	r.URL.RawQuery = q.Encode()
 
-	h := DigesterHandler{
-		LogProvider:      logProvider,
-		LogEventProvider: logEventProvider,
-	}
+	h := DigesterHandler{}
 	h.Post(w, r)
 
 	assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
@@ -56,10 +40,7 @@ func TestPostInvalidStop(t *testing.T) {
 	q.Set("stop", stop)
 	r.URL.RawQuery = q.Encode()
 
-	h := DigesterHandler{
-		LogProvider:      logProvider,
-		LogEventProvider: logEventProvider,
-	}
+	h := DigesterHandler{}
 	h.Post(w, r)
 
 	assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
@@ -76,10 +57,7 @@ func TestPostInvalidRange(t *testing.T) {
 	q.Set("stop", stop)
 	r.URL.RawQuery = q.Encode()
 
-	h := DigesterHandler{
-		LogProvider:      logProvider,
-		LogEventProvider: logEventProvider,
-	}
+	h := DigesterHandler{}
 	h.Post(w, r)
 
 	assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
@@ -99,13 +77,11 @@ func TestPostConflictInProgress(t *testing.T) {
 	q.Set("stop", stop)
 	r.URL.RawQuery = q.Encode()
 
-	storageMock := mocks.NewMockStorage(ctrl)
+	storageMock := NewMockStorage(ctrl)
 	storageMock.EXPECT().Get(gomock.Any()).Return(nil, &types.ErrInProgress{})
 
 	h := DigesterHandler{
-		LogProvider:      logProvider,
-		LogEventProvider: logEventProvider,
-		Storage:          storageMock,
+		Storage: storageMock,
 	}
 	h.Post(w, r)
 
@@ -126,13 +102,11 @@ func TestPostConflictDigestCreated(t *testing.T) {
 	q.Set("stop", stop)
 	r.URL.RawQuery = q.Encode()
 
-	storageMock := mocks.NewMockStorage(ctrl)
+	storageMock := NewMockStorage(ctrl)
 	storageMock.EXPECT().Get(gomock.Any()).Return([]byte("digest"), nil)
 
 	h := DigesterHandler{
-		LogProvider:      logProvider,
-		LogEventProvider: logEventProvider,
-		Storage:          storageMock,
+		Storage: storageMock,
 	}
 	h.Post(w, r)
 
@@ -153,13 +127,11 @@ func TestPostStorageError(t *testing.T) {
 	q.Set("stop", stop)
 	r.URL.RawQuery = q.Encode()
 
-	storageMock := mocks.NewMockStorage(ctrl)
+	storageMock := NewMockStorage(ctrl)
 	storageMock.EXPECT().Get(gomock.Any()).Return(nil, errors.New("oops"))
 
 	h := DigesterHandler{
-		LogProvider:      logProvider,
-		LogEventProvider: logEventProvider,
-		Storage:          storageMock,
+		Storage: storageMock,
 	}
 	h.Post(w, r)
 
@@ -180,16 +152,14 @@ func TestPostQueueError(t *testing.T) {
 	q.Set("stop", stop.Format(time.RFC3339Nano))
 	r.URL.RawQuery = q.Encode()
 
-	storageMock := mocks.NewMockStorage(ctrl)
+	storageMock := NewMockStorage(ctrl)
 	storageMock.EXPECT().Get(gomock.Any()).Return([]byte{}, nil)
-	queuerMock := mocks.NewMockQueuer(ctrl)
+	queuerMock := NewMockQueuer(ctrl)
 	queuerMock.EXPECT().Queue(gomock.Any(), start.Truncate(time.Second), stop.Truncate(time.Second)).Return(errors.New("oops"))
 
 	h := DigesterHandler{
-		LogProvider:      logProvider,
-		LogEventProvider: logEventProvider,
-		Storage:          storageMock,
-		Queuer:           queuerMock,
+		Storage: storageMock,
+		Queuer:  queuerMock,
 	}
 	h.Post(w, r)
 
@@ -210,16 +180,14 @@ func TestPostHappyPath(t *testing.T) {
 	q.Set("stop", stop.Format(time.RFC3339Nano))
 	r.URL.RawQuery = q.Encode()
 
-	storageMock := mocks.NewMockStorage(ctrl)
+	storageMock := NewMockStorage(ctrl)
 	storageMock.EXPECT().Get(gomock.Any()).Return([]byte{}, nil)
-	queuerMock := mocks.NewMockQueuer(ctrl)
+	queuerMock := NewMockQueuer(ctrl)
 	queuerMock.EXPECT().Queue(gomock.Any(), start.Truncate(time.Second), stop.Truncate(time.Second)).Return(nil)
 
 	h := DigesterHandler{
-		LogProvider:      logProvider,
-		LogEventProvider: logEventProvider,
-		Storage:          storageMock,
-		Queuer:           queuerMock,
+		Storage: storageMock,
+		Queuer:  queuerMock,
 	}
 	h.Post(w, r)
 

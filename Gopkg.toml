@@ -4,20 +4,12 @@
 # for detailed Gopkg.toml documentation.
 
 [[constraint]]
-  name = "bitbucket.org/atlassian/gosrv"
-  version = "^2.0.0"
-
-[[constraint]]
-  name = "bitbucket.org/atlassian/logevent"
-  version = "1.0.2"
+  name = "github.com/go-chi/chi"
+  version = "v3.3.3"
 
 [[constraint]]
   name = "github.com/satori/go.uuid"
   version = "v1.2.0"
-
-[[constraint]]
-  branch = "master"
-  name = "github.com/rs/xstats"
 
 [prune]
   go-tests = true

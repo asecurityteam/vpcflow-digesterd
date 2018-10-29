@@ -1,38 +1,27 @@
 package v1
 
 import (
-	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
-	gosrvhttp "bitbucket.org/atlassian/gosrv/pkg/http"
-	"bitbucket.org/atlassian/httplog"
 	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/types"
 	"github.com/satori/go.uuid"
 )
 
-const (
-	unknownObject = "unknown"
-	actionCreate  = "create"
-)
-
 // DigesterHandler handles incoming HTTP requests for starting and retrieving new digests
 type DigesterHandler struct {
-	LogProvider      types.LoggerProvider
-	LogEventProvider types.LogEventProvider
-	Storage          types.Storage
-	Queuer           types.Queuer
+	Storage types.Storage
+	Queuer  types.Queuer
 }
 
 // Post creates a new digest
 func (h *DigesterHandler) Post(w http.ResponseWriter, r *http.Request) {
-	logger := h.LogProvider(r.Context())
 	start, stop, err := extractInput(r)
 	if err != nil {
-		logger.Info(h.newDigestEvent(r.Context(), http.StatusBadRequest, unknownObject, err.Error(), actionCreate))
-		gosrvhttp.JSONErrors(w, http.StatusBadRequest, err)
+		writeResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	id := computeID(start, stop)
@@ -40,25 +29,21 @@ func (h *DigesterHandler) Post(w http.ResponseWriter, r *http.Request) {
 	switch err.(type) {
 	case nil:
 	case *types.ErrInProgress:
-		logger.Info(h.newDigestEvent(r.Context(), http.StatusConflict, id, err.Error(), actionCreate))
-		gosrvhttp.JSONErrors(w, http.StatusConflict, err)
+		writeResponse(w, http.StatusConflict, err.Error())
 		return
 	default:
-		logger.Error(h.newDigestEvent(r.Context(), http.StatusInternalServerError, id, err.Error(), actionCreate))
-		gosrvhttp.JSONMessages(w, http.StatusInternalServerError, "internal")
+		writeResponse(w, http.StatusInternalServerError, "internal")
 		return
 	}
 	// if data is returned, a digest already exists. return 409 and exit
 	if len(data) > 0 {
 		msg := fmt.Sprintf("digest %s already exists", id)
-		logger.Info(h.newDigestEvent(r.Context(), http.StatusConflict, id, msg, actionCreate))
-		gosrvhttp.JSONMessages(w, http.StatusConflict, msg)
+		writeResponse(w, http.StatusConflict, msg)
 		return
 	}
 
 	if err := h.Queuer.Queue(id, start, stop); err != nil {
-		logger.Error(h.newDigestEvent(r.Context(), http.StatusInternalServerError, id, err.Error(), actionCreate))
-		gosrvhttp.JSONMessages(w, http.StatusInternalServerError, "internal")
+		writeResponse(w, http.StatusInternalServerError, "internal")
 		return
 	}
 
@@ -94,14 +79,14 @@ func computeID(start, stop time.Time) string {
 	return u.String()
 }
 
-// return a new Event prepopulated with data from the context and the given fields
-// nolint TODO: remove this (unparam) when GET is implemented
-func (h *DigesterHandler) newDigestEvent(ctx context.Context, status int, objectID, result, action string) httplog.Event {
-	e := h.LogEventProvider(ctx)
-	e.Status = status
-	e.ObjectID = objectID
-	e.ObjectType = "digest"
-	e.Result = result
-	e.Action = action
-	return e
+// write the http response with the given status code and message
+func writeResponse(w http.ResponseWriter, statusCode int, message string) {
+	msg := struct {
+		Message string `json:"message"`
+	}{
+		Message: message,
+	}
+	w.Header().Add("Content-type", "application/json")
+	w.WriteHeader(statusCode)
+	_ = json.NewEncoder(w).Encode(msg)
 }
