@@ -37,6 +37,7 @@ func (q *DigestQueuer) Queue(ctx context.Context, id string, start, stop time.Ti
 	if err != nil {
 		return err
 	}
+	req.Header.Set("Content-Type", "application/octet-stream")
 	res, err := q.Client.Do(req.WithContext(ctx))
 	if err != nil {
 		return err

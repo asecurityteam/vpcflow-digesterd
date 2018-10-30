@@ -30,6 +30,9 @@ func (rt *testRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	if rt.ExpectedURL != r.URL.String() {
 		return nil, fmt.Errorf("Expected %s, but was %s", rt.ExpectedURL, r.URL.String())
 	}
+	if r.Header.Get("Content-Type") != "application/octet-stream" {
+		return nil, fmt.Errorf("Expected Content-Type to be set to application/octet-stream, but was %s", r.Header.Get("Content-Type"))
+	}
 	if rt.Error != nil {
 		return nil, rt.Error
 	}
