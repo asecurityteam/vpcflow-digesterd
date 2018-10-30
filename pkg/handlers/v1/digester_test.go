@@ -78,7 +78,7 @@ func TestPostConflictInProgress(t *testing.T) {
 	r.URL.RawQuery = q.Encode()
 
 	storageMock := NewMockStorage(ctrl)
-	storageMock.EXPECT().Get(gomock.Any(), false).Return(types.Digest{}, &types.ErrInProgress{})
+	storageMock.EXPECT().Exists(gomock.Any()).Return(false, &types.ErrInProgress{})
 
 	h := DigesterHandler{
 		Storage: storageMock,
@@ -103,7 +103,7 @@ func TestPostConflictDigestCreated(t *testing.T) {
 	r.URL.RawQuery = q.Encode()
 
 	storageMock := NewMockStorage(ctrl)
-	storageMock.EXPECT().Get(gomock.Any(), false).Return(types.Digest{Size: 1}, nil)
+	storageMock.EXPECT().Exists(gomock.Any()).Return(true, nil)
 
 	h := DigesterHandler{
 		Storage: storageMock,
@@ -128,7 +128,7 @@ func TestPostStorageError(t *testing.T) {
 	r.URL.RawQuery = q.Encode()
 
 	storageMock := NewMockStorage(ctrl)
-	storageMock.EXPECT().Get(gomock.Any(), false).Return(types.Digest{}, errors.New("oops"))
+	storageMock.EXPECT().Exists(gomock.Any()).Return(false, errors.New("oops"))
 
 	h := DigesterHandler{
 		Storage: storageMock,
@@ -153,7 +153,7 @@ func TestPostQueueError(t *testing.T) {
 	r.URL.RawQuery = q.Encode()
 
 	storageMock := NewMockStorage(ctrl)
-	storageMock.EXPECT().Get(gomock.Any(), false).Return(types.Digest{Size: 0}, nil)
+	storageMock.EXPECT().Exists(gomock.Any()).Return(false, nil)
 	queuerMock := NewMockQueuer(ctrl)
 	queuerMock.EXPECT().Queue(gomock.Any(), start.Truncate(time.Minute), stop.Truncate(time.Minute)).Return(errors.New("oops"))
 
@@ -181,7 +181,7 @@ func TestPostHappyPath(t *testing.T) {
 	r.URL.RawQuery = q.Encode()
 
 	storageMock := NewMockStorage(ctrl)
-	storageMock.EXPECT().Get(gomock.Any(), false).Return(types.Digest{Size: 0}, nil)
+	storageMock.EXPECT().Exists(gomock.Any()).Return(false, nil)
 	queuerMock := NewMockQueuer(ctrl)
 	queuerMock.EXPECT().Queue(gomock.Any(), start.Truncate(time.Minute), stop.Truncate(time.Minute)).Return(nil)
 

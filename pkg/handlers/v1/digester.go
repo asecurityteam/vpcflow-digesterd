@@ -27,7 +27,7 @@ func (h *DigesterHandler) Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := computeID(start, stop)
-	digest, err := h.Storage.Get(id, false)
+	exists, err := h.Storage.Exists(id)
 	switch err.(type) {
 	case nil:
 	case *types.ErrInProgress:
@@ -38,7 +38,7 @@ func (h *DigesterHandler) Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// if data is returned, a digest already exists. return 409 and exit
-	if digest.Size > 0 {
+	if exists {
 		msg := fmt.Sprintf("digest %s already exists", id)
 		writeResponse(w, http.StatusConflict, msg)
 		return
