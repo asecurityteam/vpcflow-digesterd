@@ -42,6 +42,7 @@ func main() {
 	}
 	router := chi.NewRouter()
 	router.Post("/", digesterHandler.Post)
+	router.Get("/", digesterHandler.Get)
 
 	stop := make(chan os.Signal)
 	signal.Notify(stop, os.Interrupt)
