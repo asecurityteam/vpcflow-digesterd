@@ -4,6 +4,7 @@
 package v1
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	time "time"
 )
@@ -29,12 +30,12 @@ func (_m *MockQueuer) EXPECT() *_MockQueuerRecorder {
 	return _m.recorder
 }
 
-func (_m *MockQueuer) Queue(id string, start time.Time, stop time.Time) error {
-	ret := _m.ctrl.Call(_m, "Queue", id, start, stop)
+func (_m *MockQueuer) Queue(ctx context.Context, id string, start time.Time, stop time.Time) error {
+	ret := _m.ctrl.Call(_m, "Queue", ctx, id, start, stop)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-func (_mr *_MockQueuerRecorder) Queue(arg0, arg1, arg2 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Queue", arg0, arg1, arg2)
+func (_mr *_MockQueuerRecorder) Queue(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Queue", arg0, arg1, arg2, arg3)
 }

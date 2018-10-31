@@ -11,6 +11,11 @@ pipelines:
               - export PATH=$HOME/go/bin:$PATH GOPATH=~/go SRCDIR=$HOME/go/src/bitbucket.org/atlassian/vpcflow-digesterd
               - mkdir -p $HOME/go/bin $HOME/go/src/bitbucket.org/atlassian && ln -s $BITBUCKET_CLONE_DIR $SRCDIR && cd $SRCDIR
               - apt-get update && apt-get install -y apt-transport-https ca-certificates make curl gcc git
+              - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $GOPATH/bin latest
+              - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+
+              # Get dependencies
+              - make dep
 
               # Lint
               - make lint
@@ -25,6 +30,8 @@ pipelines:
               - mkdir -p $HOME/go/bin $HOME/go/src/bitbucket.org/atlassian && ln -s $BITBUCKET_CLONE_DIR $SRCDIR && cd $SRCDIR
               - apt-get update && apt-get install -y apt-transport-https ca-certificates make curl gcc git
               - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+              - go get github.com/axw/gocov/...
+              - go get github.com/AlekSi/gocov-xml
 
               # Get dependencies
               - make dep
@@ -44,6 +51,8 @@ pipelines:
               - mkdir -p $HOME/go/bin $HOME/go/src/bitbucket.org/atlassian && ln -s $BITBUCKET_CLONE_DIR $SRCDIR && cd $SRCDIR
               - apt-get update && apt-get install -y apt-transport-https ca-certificates make curl gcc git
               - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+              - go get github.com/axw/gocov/...
+              - go get github.com/AlekSi/gocov-xml
 
               # Get dependencies
               - make dep
@@ -62,6 +71,9 @@ pipelines:
             - export PATH=$HOME/go/bin:$PATH GOPATH=~/go SRCDIR=$HOME/go/src/bitbucket.org/atlassian/vpcflow-digesterd
             - mkdir -p $HOME/go/bin $HOME/go/src/bitbucket.org/atlassian && ln -s $BITBUCKET_CLONE_DIR $SRCDIR && cd $SRCDIR
             - apt-get update && apt-get install -y apt-transport-https ca-certificates make curl gcc git bc jq
+            - go get github.com/axw/gocov/...
+            - go get github.com/AlekSi/gocov-xml
+            - go get github.com/wadey/gocovmerge
 
             # Create coverage report
             - make coverage

@@ -12,6 +12,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type timeMatcher struct {
+	T time.Time
+}
+
+// Matches implements matcher and matches whether or not two times are equal
+// using the preferred .Equal function from the time package.
+func (m *timeMatcher) Matches(x interface{}) bool {
+	t, ok := x.(time.Time)
+	if !ok {
+		return false
+	}
+	return m.T.Equal(t)
+}
+
+func (m *timeMatcher) String() string {
+	return "matches two time.Time instances based on the evaluation of time.Equal()"
+}
+
 func TestPostInvalidStart(t *testing.T) {
 	start := ""
 	stop := time.Now().Format(time.RFC3339Nano)
@@ -78,7 +96,7 @@ func TestPostConflictInProgress(t *testing.T) {
 	r.URL.RawQuery = q.Encode()
 
 	storageMock := NewMockStorage(ctrl)
-	storageMock.EXPECT().Exists(gomock.Any()).Return(false, &types.ErrInProgress{})
+	storageMock.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(false, &types.ErrInProgress{})
 
 	h := DigesterHandler{
 		Storage: storageMock,
@@ -103,7 +121,7 @@ func TestPostConflictDigestCreated(t *testing.T) {
 	r.URL.RawQuery = q.Encode()
 
 	storageMock := NewMockStorage(ctrl)
-	storageMock.EXPECT().Exists(gomock.Any()).Return(true, nil)
+	storageMock.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil)
 
 	h := DigesterHandler{
 		Storage: storageMock,
@@ -128,7 +146,7 @@ func TestPostStorageError(t *testing.T) {
 	r.URL.RawQuery = q.Encode()
 
 	storageMock := NewMockStorage(ctrl)
-	storageMock.EXPECT().Exists(gomock.Any()).Return(false, errors.New("oops"))
+	storageMock.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(false, errors.New("oops"))
 
 	h := DigesterHandler{
 		Storage: storageMock,
@@ -152,10 +170,13 @@ func TestPostQueueError(t *testing.T) {
 	q.Set("stop", stop.Format(time.RFC3339Nano))
 	r.URL.RawQuery = q.Encode()
 
+	expectedStart := &timeMatcher{start.Truncate(time.Minute)}
+	expectedStop := &timeMatcher{stop.Truncate(time.Minute)}
+
 	storageMock := NewMockStorage(ctrl)
-	storageMock.EXPECT().Exists(gomock.Any()).Return(false, nil)
+	storageMock.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(false, nil)
 	queuerMock := NewMockQueuer(ctrl)
-	queuerMock.EXPECT().Queue(gomock.Any(), start.Truncate(time.Minute), stop.Truncate(time.Minute)).Return(errors.New("oops"))
+	queuerMock.EXPECT().Queue(gomock.Any(), gomock.Any(), expectedStart, expectedStop).Return(errors.New("oops"))
 
 	h := DigesterHandler{
 		Storage: storageMock,
@@ -180,10 +201,13 @@ func TestPostHappyPath(t *testing.T) {
 	q.Set("stop", stop.Format(time.RFC3339Nano))
 	r.URL.RawQuery = q.Encode()
 
+	expectedStart := &timeMatcher{start.Truncate(time.Minute)}
+	expectedStop := &timeMatcher{stop.Truncate(time.Minute)}
+
 	storageMock := NewMockStorage(ctrl)
-	storageMock.EXPECT().Exists(gomock.Any()).Return(false, nil)
+	storageMock.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(false, nil)
 	queuerMock := NewMockQueuer(ctrl)
-	queuerMock.EXPECT().Queue(gomock.Any(), start.Truncate(time.Minute), stop.Truncate(time.Minute)).Return(nil)
+	queuerMock.EXPECT().Queue(gomock.Any(), gomock.Any(), expectedStart, expectedStop).Return(nil)
 
 	h := DigesterHandler{
 		Storage: storageMock,

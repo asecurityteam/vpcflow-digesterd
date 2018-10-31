@@ -2,22 +2,44 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"time"
 
 	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/handlers/v1"
+	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/stream"
 	"github.com/go-chi/chi"
 )
 
-func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+func mustEnv(key string) string {
+	val := os.Getenv(key)
+	if val == "" {
+		panic(fmt.Sprintf("%s is required", key))
 	}
-	digesterHandler := &v1.DigesterHandler{}
+	return val
+}
+
+func main() {
+	port := mustEnv("PORT")
+	streamApplianceEndpoint := mustEnv("STREAM_APPLIANCE_ENDPOINT")
+	streamApplianceTopic := mustEnv("STREAM_APPLIANCE_TOPIC")
+	streamApplianceURL, err := url.Parse(streamApplianceEndpoint)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	digestQueuer := &stream.DigestQueuer{
+		Client:   &http.Client{},
+		Endpoint: streamApplianceURL,
+		Topic:    streamApplianceTopic,
+	}
+	digesterHandler := &v1.DigesterHandler{
+		Queuer: digestQueuer,
+	}
 	router := chi.NewRouter()
 	router.Post("/", digesterHandler.Post)
 

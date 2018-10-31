@@ -27,7 +27,7 @@ func (h *DigesterHandler) Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := computeID(start, stop)
-	exists, err := h.Storage.Exists(id)
+	exists, err := h.Storage.Exists(r.Context(), id)
 	switch err.(type) {
 	case nil:
 	case *types.ErrInProgress:
@@ -44,7 +44,7 @@ func (h *DigesterHandler) Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.Queuer.Queue(id, start, stop); err != nil {
+	if err := h.Queuer.Queue(r.Context(), id, start, stop); err != nil {
 		writeResponse(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
