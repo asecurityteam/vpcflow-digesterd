@@ -4,12 +4,12 @@
 # for detailed Gopkg.toml documentation.
 
 [[constraint]]
-  name = "bitbucket.org/atlassian/logevent"
-  version = "1.0.2"
+  name = "github.com/go-chi/chi"
+  version = "v3.3.3"
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/rs/xstats"
+  name = "github.com/google/uuid"
+  version = "v1.0.0"
 
 [prune]
   go-tests = true
