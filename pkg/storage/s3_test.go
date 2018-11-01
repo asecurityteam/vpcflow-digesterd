@@ -70,7 +70,7 @@ func TestGetNotFound(t *testing.T) {
 	_, err := storage.Get(context.Background(), key)
 	assert.NotNil(t, err)
 
-	_, ok := err.(types.NotFound)
+	_, ok := err.(types.ErrNotFound)
 	assert.True(t, ok)
 }
 

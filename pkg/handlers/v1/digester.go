@@ -31,7 +31,7 @@ func (h *DigesterHandler) Post(w http.ResponseWriter, r *http.Request) {
 	exists, err := h.Storage.Exists(r.Context(), id)
 	switch err.(type) {
 	case nil:
-	case types.InProgress:
+	case types.ErrInProgress:
 		writeResponse(w, http.StatusConflict, err.Error())
 		return
 	default:
@@ -65,10 +65,10 @@ func (h *DigesterHandler) Get(w http.ResponseWriter, r *http.Request) {
 	switch err.(type) {
 	case nil:
 		defer body.Close()
-	case types.InProgress:
+	case types.ErrInProgress:
 		w.WriteHeader(http.StatusNoContent)
 		return
-	case types.NotFound:
+	case types.ErrNotFound:
 		w.WriteHeader(http.StatusNotFound)
 		return
 	default:

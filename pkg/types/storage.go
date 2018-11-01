@@ -6,21 +6,21 @@ import (
 	"io"
 )
 
-// InProgress indicates that a digest is in the process of being created
-type InProgress struct {
+// ErrInProgress indicates that a digest is in the process of being created
+type ErrInProgress struct {
 	Key string
 }
 
-func (e InProgress) Error() string {
+func (e ErrInProgress) Error() string {
 	return fmt.Sprintf("digest %s is being created", e.Key)
 }
 
-// NotFound represents a resource lookup that failed due to a missing record.
-type NotFound struct {
+// ErrNotFound represents a resource lookup that failed due to a missing record.
+type ErrNotFound struct {
 	ID string
 }
 
-func (e NotFound) Error() string {
+func (e ErrNotFound) Error() string {
 	return fmt.Sprintf("digest %s was not found", e.ID)
 }
 

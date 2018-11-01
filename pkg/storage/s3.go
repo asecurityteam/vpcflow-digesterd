@@ -42,7 +42,7 @@ func (s *S3Storage) Exists(ctx context.Context, key string) (bool, error) {
 	if err == nil {
 		return true, nil
 	}
-	if _, ok := parseNotFound(err, key).(types.NotFound); ok {
+	if _, ok := parseNotFound(err, key).(types.ErrNotFound); ok {
 		return false, nil
 	}
 	return false, err
@@ -62,7 +62,7 @@ func (s *S3Storage) Store(ctx context.Context, key string, data io.ReadCloser) e
 // If a key is not found, transform to our NotFound error, otherwise return original error
 func parseNotFound(err error, key string) error {
 	if aErr, ok := err.(awserr.Error); ok && aErr.Code() == s3.ErrCodeNoSuchKey {
-		return types.NotFound{ID: key}
+		return types.ErrNotFound{ID: key}
 	}
 	return err
 }
