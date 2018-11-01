@@ -110,7 +110,7 @@ func TestGetStorageErrors(t *testing.T) {
 	}{
 		{
 			Name:               "GET_in_progress",
-			Error:              types.ErrInProgress{},
+			Error:              types.InProgress{},
 			ExpectedStatusCode: http.StatusNoContent,
 		},
 		{
@@ -202,7 +202,7 @@ func TestPostConflictInProgress(t *testing.T) {
 	r.URL.RawQuery = q.Encode()
 
 	storageMock := NewMockStorage(ctrl)
-	storageMock.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(false, types.ErrInProgress{})
+	storageMock.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(false, types.InProgress{})
 
 	h := DigesterHandler{
 		Storage: storageMock,

@@ -51,3 +51,13 @@ func (_m *MockStorage) Exists(ctx context.Context, key string) (bool, error) {
 func (_mr *_MockStorageRecorder) Exists(arg0, arg1 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Exists", arg0, arg1)
 }
+
+func (_m *MockStorage) Store(ctx context.Context, key string, data io.ReadCloser) error {
+	ret := _m.ctrl.Call(_m, "Store", ctx, key, data)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (_mr *_MockStorageRecorder) Store(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Store", arg0, arg1, arg2)
+}
