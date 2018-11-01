@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -30,7 +31,7 @@ func (h *DigesterHandler) Post(w http.ResponseWriter, r *http.Request) {
 	exists, err := h.Storage.Exists(r.Context(), id)
 	switch err.(type) {
 	case nil:
-	case *types.ErrInProgress:
+	case types.ErrInProgress:
 		writeResponse(w, http.StatusConflict, err.Error())
 		return
 	default:
@@ -50,6 +51,34 @@ func (h *DigesterHandler) Post(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusAccepted)
+}
+
+// Get retrieves a digest
+func (h *DigesterHandler) Get(w http.ResponseWriter, r *http.Request) {
+	start, stop, err := extractInput(r)
+	if err != nil {
+		writeResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	id := computeID(start, stop)
+	body, err := h.Storage.Get(r.Context(), id)
+	switch err.(type) {
+	case nil:
+		defer body.Close()
+	case types.ErrInProgress:
+		w.WriteHeader(http.StatusNoContent)
+		return
+	case types.NotFound:
+		w.WriteHeader(http.StatusNotFound)
+		return
+	default:
+		writeResponse(w, http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.WriteHeader(http.StatusOK)
+	_, _ = io.Copy(w, body)
 }
 
 // extractInput attempts to extract the start/stop query parameters required by GET and POST.

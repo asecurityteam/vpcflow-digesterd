@@ -6,6 +6,7 @@ package v1
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
+	io "io"
 )
 
 // Mock of Storage interface
@@ -29,9 +30,9 @@ func (_m *MockStorage) EXPECT() *_MockStorageRecorder {
 	return _m.recorder
 }
 
-func (_m *MockStorage) Get(ctx context.Context, key string) ([]byte, error) {
+func (_m *MockStorage) Get(ctx context.Context, key string) (io.ReadCloser, error) {
 	ret := _m.ctrl.Call(_m, "Get", ctx, key)
-	ret0, _ := ret[0].([]byte)
+	ret0, _ := ret[0].(io.ReadCloser)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
