@@ -200,7 +200,7 @@ func TestStoreError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	value := "this is a digest"
+	value := "this is another digest"
 
 	mockUploader := NewMockUploaderAPI(ctrl)
 	mockUploader.EXPECT().UploadWithContext(gomock.Any(), gomock.Any()).Return(nil, errors.New("oops"))

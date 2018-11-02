@@ -35,3 +35,9 @@ type Storage interface {
 	// Store stores the digest
 	Store(ctx context.Context, key string, data io.ReadCloser) error
 }
+
+// Marker is an interface for indicating that a digest is in progress of being created
+type Marker interface {
+	// Mark flags the digest identified by key as being "in progress"
+	Mark(ctx context.Context, key string) error
+}
