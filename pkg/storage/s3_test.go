@@ -2,6 +2,7 @@ package storage
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"errors"
 	"io/ioutil"
@@ -11,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -169,19 +171,24 @@ func TestStore(t *testing.T) {
 
 	value := "this is a digest"
 
-	mockS3 := NewMockS3API(ctrl)
-	mockS3.EXPECT().PutObjectWithContext(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, input *s3.PutObjectInput) (interface{}, error) {
-		body, err := ioutil.ReadAll(input.Body)
+	mockUploader := NewMockUploaderAPI(ctrl)
+	mockUploader.EXPECT().UploadWithContext(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, input *s3manager.UploadInput) (interface{}, error) {
+		gr, err := gzip.NewReader(input.Body)
 		if err != nil {
 			return nil, err
 		}
-		assert.Equal(t, value, string(body))
-		return &s3.PutObjectOutput{}, nil
+		defer gr.Close()
+		data, err := ioutil.ReadAll(gr)
+		if err != nil {
+			return nil, err
+		}
+		assert.Equal(t, value, string(data))
+		return &s3manager.UploadOutput{}, nil
 	})
 
 	storage := S3Storage{
-		Bucket: bucket,
-		Client: mockS3,
+		Bucket:   bucket,
+		uploader: mockUploader,
 	}
 
 	input := ioutil.NopCloser(bytes.NewReader([]byte(value)))
@@ -195,12 +202,12 @@ func TestStoreError(t *testing.T) {
 
 	value := "this is a digest"
 
-	mockS3 := NewMockS3API(ctrl)
-	mockS3.EXPECT().PutObjectWithContext(gomock.Any(), gomock.Any()).Return(nil, errors.New("oops"))
+	mockUploader := NewMockUploaderAPI(ctrl)
+	mockUploader.EXPECT().UploadWithContext(gomock.Any(), gomock.Any()).Return(nil, errors.New("oops"))
 
 	storage := S3Storage{
-		Bucket: bucket,
-		Client: mockS3,
+		Bucket:   bucket,
+		uploader: mockUploader,
 	}
 
 	input := ioutil.NopCloser(bytes.NewReader([]byte(value)))

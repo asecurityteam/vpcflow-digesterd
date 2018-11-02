@@ -2,7 +2,7 @@
 
 
 [[projects]]
-  digest = "1:10d2b13951972f4f156e091a05f35d3187b0a9b51bec91781b82f867dcc43eb2"
+  digest = "1:9284119cfb2dd7d9f5fc474306d6a7f90a47776b9eedf8ebaf91c7b73d993c8b"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -29,6 +29,8 @@
     "private/protocol/xml/xmlutil",
     "service/s3",
     "service/s3/s3iface",
+    "service/s3/s3manager",
+    "service/s3/s3manager/s3manageriface",
   ]
   pruneopts = "UT"
   revision = "870fa4307c5f57c14153c695df7b87af1acdcbf1"
@@ -106,6 +108,8 @@
     "github.com/aws/aws-sdk-go/aws/request",
     "github.com/aws/aws-sdk-go/service/s3",
     "github.com/aws/aws-sdk-go/service/s3/s3iface",
+    "github.com/aws/aws-sdk-go/service/s3/s3manager",
+    "github.com/aws/aws-sdk-go/service/s3/s3manager/s3manageriface",
     "github.com/go-chi/chi",
     "github.com/golang/mock/gomock",
     "github.com/google/uuid",

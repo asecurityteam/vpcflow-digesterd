@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"io"
 
@@ -9,17 +11,21 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager/s3manageriface"
 )
 
 const keySuffix = ".log.gz"
 
 // S3Storage implements the Storage interface and uses S3 as the backing store for digests
 type S3Storage struct {
-	Bucket string
-	Client s3iface.S3API
+	Bucket   string
+	Client   s3iface.S3API
+	uploader s3manageriface.UploaderAPI
 }
 
-// Get returns the digest for the given key.
+// Get returns the digest for the given key. The digest is returned as a gzipped payload.
+// It is the caller's responsibility to call Close on the Reader when done.
 func (s *S3Storage) Get(ctx context.Context, key string) (io.ReadCloser, error) {
 	input := &s3.GetObjectInput{
 		Bucket: aws.String(s.Bucket),
@@ -50,12 +56,24 @@ func (s *S3Storage) Exists(ctx context.Context, key string) (bool, error) {
 
 // Store stores the digest. It is the caller's responsibility to call Close on the Reader when done.
 func (s *S3Storage) Store(ctx context.Context, key string, data io.ReadCloser) error {
-	input := &s3.PutObjectInput{
+	// gzip the digest
+	buff := &bytes.Buffer{}
+	gw := gzip.NewWriter(buff)
+	if _, err := io.Copy(gw, data); err != nil {
+		return err
+	}
+	gw.Close()
+
+	// lazily initialize uploader with the s3 client
+	if s.uploader == nil {
+		s.uploader = s3manager.NewUploaderWithClient(s.Client)
+	}
+
+	_, err := s.uploader.UploadWithContext(ctx, &s3manager.UploadInput{
 		Bucket: aws.String(s.Bucket),
 		Key:    aws.String(key + keySuffix),
-		Body:   aws.ReadSeekCloser(data),
-	}
-	_, err := s.Client.PutObjectWithContext(ctx, input)
+		Body:   buff,
+	})
 	return err
 }
 
