@@ -17,8 +17,8 @@ import (
 
 const keySuffix = ".log.gz"
 
-// S3Storage implements the Storage interface and uses S3 as the backing store for digests
-type S3Storage struct {
+// S3 implements the Storage interface and uses S3 as the backing store for digests
+type S3 struct {
 	Bucket   string
 	Client   s3iface.S3API
 	uploader s3manageriface.UploaderAPI
@@ -26,7 +26,7 @@ type S3Storage struct {
 
 // Get returns the digest for the given key. The digest is returned as a gzipped payload.
 // It is the caller's responsibility to call Close on the Reader when done.
-func (s *S3Storage) Get(ctx context.Context, key string) (io.ReadCloser, error) {
+func (s *S3) Get(ctx context.Context, key string) (io.ReadCloser, error) {
 	input := &s3.GetObjectInput{
 		Bucket: aws.String(s.Bucket),
 		Key:    aws.String(key + keySuffix),
@@ -39,7 +39,7 @@ func (s *S3Storage) Get(ctx context.Context, key string) (io.ReadCloser, error) 
 }
 
 // Exists returns true if the digest exists, but does not download the digest body.
-func (s *S3Storage) Exists(ctx context.Context, key string) (bool, error) {
+func (s *S3) Exists(ctx context.Context, key string) (bool, error) {
 	input := &s3.HeadObjectInput{
 		Bucket: aws.String(s.Bucket),
 		Key:    aws.String(key + keySuffix),
@@ -55,7 +55,7 @@ func (s *S3Storage) Exists(ctx context.Context, key string) (bool, error) {
 }
 
 // Store stores the digest. It is the caller's responsibility to call Close on the Reader when done.
-func (s *S3Storage) Store(ctx context.Context, key string, data io.ReadCloser) error {
+func (s *S3) Store(ctx context.Context, key string, data io.ReadCloser) error {
 	// gzip the digest
 	buff := &bytes.Buffer{}
 	gw := gzip.NewWriter(buff)

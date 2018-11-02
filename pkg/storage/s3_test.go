@@ -38,7 +38,7 @@ func TestGet(t *testing.T) {
 	mockS3 := NewMockS3API(ctrl)
 	mockS3.EXPECT().GetObjectWithContext(gomock.Any(), expectedInput).Return(output, nil)
 
-	storage := S3Storage{
+	storage := &S3{
 		Bucket: bucket,
 		Client: mockS3,
 	}
@@ -64,7 +64,7 @@ func TestGetNotFound(t *testing.T) {
 	mockS3 := NewMockS3API(ctrl)
 	mockS3.EXPECT().GetObjectWithContext(gomock.Any(), expectedInput).Return(nil, aErr)
 
-	storage := S3Storage{
+	storage := &S3{
 		Bucket: bucket,
 		Client: mockS3,
 	}
@@ -88,7 +88,7 @@ func TestGetError(t *testing.T) {
 	mockS3 := NewMockS3API(ctrl)
 	mockS3.EXPECT().GetObjectWithContext(gomock.Any(), expectedInput).Return(nil, errors.New("oops"))
 
-	storage := S3Storage{
+	storage := &S3{
 		Bucket: bucket,
 		Client: mockS3,
 	}
@@ -110,7 +110,7 @@ func TestExists(t *testing.T) {
 	mockS3 := NewMockS3API(ctrl)
 	mockS3.EXPECT().HeadObjectWithContext(gomock.Any(), expectedInput).Return(output, nil)
 
-	storage := S3Storage{
+	storage := &S3{
 		Bucket: bucket,
 		Client: mockS3,
 	}
@@ -134,7 +134,7 @@ func TestNotExists(t *testing.T) {
 	mockS3 := NewMockS3API(ctrl)
 	mockS3.EXPECT().HeadObjectWithContext(gomock.Any(), expectedInput).Return(nil, aErr)
 
-	storage := S3Storage{
+	storage := &S3{
 		Bucket: bucket,
 		Client: mockS3,
 	}
@@ -156,7 +156,7 @@ func TestExistsError(t *testing.T) {
 	mockS3 := NewMockS3API(ctrl)
 	mockS3.EXPECT().HeadObjectWithContext(gomock.Any(), expectedInput).Return(nil, errors.New("oops"))
 
-	storage := S3Storage{
+	storage := &S3{
 		Bucket: bucket,
 		Client: mockS3,
 	}
@@ -186,7 +186,7 @@ func TestStore(t *testing.T) {
 		return &s3manager.UploadOutput{}, nil
 	})
 
-	storage := S3Storage{
+	storage := &S3{
 		Bucket:   bucket,
 		uploader: mockUploader,
 	}
@@ -205,7 +205,7 @@ func TestStoreError(t *testing.T) {
 	mockUploader := NewMockUploaderAPI(ctrl)
 	mockUploader.EXPECT().UploadWithContext(gomock.Any(), gomock.Any()).Return(nil, errors.New("oops"))
 
-	storage := S3Storage{
+	storage := &S3{
 		Bucket:   bucket,
 		uploader: mockUploader,
 	}
