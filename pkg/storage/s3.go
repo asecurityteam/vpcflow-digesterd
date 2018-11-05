@@ -67,9 +67,7 @@ func (s *S3) Store(ctx context.Context, key string, data io.ReadCloser) error {
 	gw.Close()
 
 	// lazily initialize uploader with the s3 client
-	if s.uploader == nil {
-		s.initUploader()
-	}
+	s.initUploader()
 
 	_, err := s.uploader.UploadWithContext(ctx, &s3manager.UploadInput{
 		Bucket: aws.String(s.Bucket),
