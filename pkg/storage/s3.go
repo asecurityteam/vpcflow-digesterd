@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"context"
 	"io"
+	"sync"
 
 	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/types"
 	"github.com/aws/aws-sdk-go/aws"
@@ -22,6 +23,7 @@ type S3 struct {
 	Bucket   string
 	Client   s3iface.S3API
 	uploader s3manageriface.UploaderAPI
+	lock     sync.Mutex
 }
 
 // Get returns the digest for the given key. The digest is returned as a gzipped payload.
@@ -66,7 +68,7 @@ func (s *S3) Store(ctx context.Context, key string, data io.ReadCloser) error {
 
 	// lazily initialize uploader with the s3 client
 	if s.uploader == nil {
-		s.uploader = s3manager.NewUploaderWithClient(s.Client)
+		s.initUploader()
 	}
 
 	_, err := s.uploader.UploadWithContext(ctx, &s3manager.UploadInput{
@@ -75,6 +77,14 @@ func (s *S3) Store(ctx context.Context, key string, data io.ReadCloser) error {
 		Body:   buff,
 	})
 	return err
+}
+
+func (s *S3) initUploader() {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	if s.uploader == nil {
+		s.uploader = s3manager.NewUploaderWithClient(s.Client)
+	}
 }
 
 // If a key is not found, transform to our NotFound error, otherwise return original error
