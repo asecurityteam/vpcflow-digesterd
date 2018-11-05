@@ -75,9 +75,7 @@ func (s *InProgress) Store(ctx context.Context, key string, data io.ReadCloser) 
 
 // Mark flags the digest identified by key as being "in progress"
 func (s *InProgress) Mark(ctx context.Context, key string) error {
-	if s.uploader == nil {
-		s.initUploader()
-	}
+	s.initUploader()
 	_, err := s.uploader.UploadWithContext(ctx, &s3manager.UploadInput{
 		Bucket: aws.String(s.Bucket),
 		Key:    aws.String(key + inProgressSuffix),
