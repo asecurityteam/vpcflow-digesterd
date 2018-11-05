@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"io"
+	"sync"
 
 	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/types"
 	"github.com/aws/aws-sdk-go/aws"
@@ -22,6 +23,7 @@ type InProgress struct {
 	Bucket   string
 	Client   s3iface.S3API
 	uploader s3manageriface.UploaderAPI
+	lock     sync.Mutex
 	types.Storage
 }
 
@@ -74,13 +76,21 @@ func (s *InProgress) Store(ctx context.Context, key string, data io.ReadCloser) 
 // Mark flags the digest identified by key as being "in progress"
 func (s *InProgress) Mark(ctx context.Context, key string) error {
 	if s.uploader == nil {
-		s.uploader = s3manager.NewUploaderWithClient(s.Client)
+		s.initUploader()
 	}
 	_, err := s.uploader.UploadWithContext(ctx, &s3manager.UploadInput{
 		Bucket: aws.String(s.Bucket),
 		Key:    aws.String(key + inProgressSuffix),
 	})
 	return err
+}
+
+func (s *InProgress) initUploader() {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	if s.uploader == nil {
+		s.uploader = s3manager.NewUploaderWithClient(s.Client)
+	}
 }
 
 func (s *InProgress) checkInProgress(ctx context.Context, key string) error {
