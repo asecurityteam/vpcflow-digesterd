@@ -50,6 +50,10 @@ func main() {
 			Client: s3Client,
 		},
 	}
+	marker := &storage.ProgressMarker{
+		Bucket: progressBucket,
+		Client: s3Client,
+	}
 	digestQueuer := &stream.DigestQueuer{
 		Client:   &http.Client{},
 		Endpoint: streamApplianceURL,
@@ -58,7 +62,7 @@ func main() {
 	digesterHandler := &v1.DigesterHandler{
 		Queuer:  digestQueuer,
 		Storage: store,
-		Marker:  store,
+		Marker:  marker,
 	}
 	router := chi.NewRouter()
 	router.Post("/", digesterHandler.Post)

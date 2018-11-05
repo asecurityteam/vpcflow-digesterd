@@ -40,4 +40,7 @@ type Storage interface {
 type Marker interface {
 	// Mark flags the digest identified by key as being "in progress"
 	Mark(ctx context.Context, key string) error
+
+	// Unmark flags the digest identified by key as not being "in progress"
+	Unmark(ctx context.Context, key string) error
 }

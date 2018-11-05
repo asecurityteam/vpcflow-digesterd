@@ -92,3 +92,13 @@ func (_m *MockMarker) Mark(ctx context.Context, key string) error {
 func (_mr *_MockMarkerRecorder) Mark(arg0, arg1 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Mark", arg0, arg1)
 }
+
+func (_m *MockMarker) Unmark(ctx context.Context, key string) error {
+	ret := _m.ctrl.Call(_m, "Unmark", ctx, key)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (_mr *_MockMarkerRecorder) Unmark(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Unmark", arg0, arg1)
+}

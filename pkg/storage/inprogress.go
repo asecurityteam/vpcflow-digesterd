@@ -3,14 +3,11 @@ package storage
 import (
 	"context"
 	"io"
-	"sync"
 
 	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/types"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager/s3manageriface"
 )
 
 const inProgressSuffix = "_in_progress"
@@ -20,10 +17,8 @@ const inProgressSuffix = "_in_progress"
 // The decorator will check if a digest is in progress, and if so, will return types.ErrInProgress.
 // On a successful Store operation, the decorator will remove the digest's "in progress" status.
 type InProgress struct {
-	Bucket   string
-	Client   s3iface.S3API
-	uploader s3manageriface.UploaderAPI
-	lock     sync.Mutex
+	Bucket string
+	Client s3iface.S3API
 	types.Storage
 }
 
@@ -57,38 +52,6 @@ func (s *InProgress) Exists(ctx context.Context, key string) (bool, error) {
 		return false, err
 	}
 	return s.Storage.Exists(ctx, key)
-}
-
-// Store stores the digest
-//
-// If the operation is successful, it will remove the in progress status of the digest
-func (s *InProgress) Store(ctx context.Context, key string, data io.ReadCloser) error {
-	if err := s.Storage.Store(ctx, key, data); err != nil {
-		return err
-	}
-	_, err := s.Client.DeleteObjectWithContext(ctx, &s3.DeleteObjectInput{
-		Bucket: aws.String(s.Bucket),
-		Key:    aws.String(key + inProgressSuffix),
-	})
-	return err
-}
-
-// Mark flags the digest identified by key as being "in progress"
-func (s *InProgress) Mark(ctx context.Context, key string) error {
-	s.initUploader()
-	_, err := s.uploader.UploadWithContext(ctx, &s3manager.UploadInput{
-		Bucket: aws.String(s.Bucket),
-		Key:    aws.String(key + inProgressSuffix),
-	})
-	return err
-}
-
-func (s *InProgress) initUploader() {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	if s.uploader == nil {
-		s.uploader = s3manager.NewUploaderWithClient(s.Client)
-	}
 }
 
 func (s *InProgress) checkInProgress(ctx context.Context, key string) error {
