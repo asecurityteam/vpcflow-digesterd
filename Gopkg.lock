@@ -2,7 +2,7 @@
 
 
 [[projects]]
-  digest = "1:9284119cfb2dd7d9f5fc474306d6a7f90a47776b9eedf8ebaf91c7b73d993c8b"
+  digest = "1:f5767ea5f9bcddc5b894ce8f639043f05c170664c8430036825a65889a850f8c"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -10,14 +10,23 @@
     "aws/awsutil",
     "aws/client",
     "aws/client/metadata",
+    "aws/corehandlers",
     "aws/credentials",
+    "aws/credentials/ec2rolecreds",
+    "aws/credentials/endpointcreds",
+    "aws/credentials/stscreds",
+    "aws/csm",
+    "aws/defaults",
+    "aws/ec2metadata",
     "aws/endpoints",
     "aws/request",
+    "aws/session",
     "aws/signer/v4",
     "internal/ini",
     "internal/s3err",
     "internal/sdkio",
     "internal/sdkrand",
+    "internal/sdkuri",
     "internal/shareddefaults",
     "private/protocol",
     "private/protocol/eventstream",
@@ -31,6 +40,7 @@
     "service/s3/s3iface",
     "service/s3/s3manager",
     "service/s3/s3manager/s3manageriface",
+    "service/sts",
   ]
   pruneopts = "UT"
   revision = "870fa4307c5f57c14153c695df7b87af1acdcbf1"
@@ -106,6 +116,7 @@
     "github.com/aws/aws-sdk-go/aws",
     "github.com/aws/aws-sdk-go/aws/awserr",
     "github.com/aws/aws-sdk-go/aws/request",
+    "github.com/aws/aws-sdk-go/aws/session",
     "github.com/aws/aws-sdk-go/service/s3",
     "github.com/aws/aws-sdk-go/service/s3/s3iface",
     "github.com/aws/aws-sdk-go/service/s3/s3manager",
