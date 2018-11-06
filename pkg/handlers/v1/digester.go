@@ -17,6 +17,7 @@ var digestNamespace = uuid.NewSHA1(uuid.Nil, []byte("digest"))
 // DigesterHandler handles incoming HTTP requests for starting and retrieving new digests
 type DigesterHandler struct {
 	Storage types.Storage
+	Marker  types.Marker
 	Queuer  types.Queuer
 }
 
@@ -50,6 +51,9 @@ func (h *DigesterHandler) Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: it's not necessarily a fatal error if this happens, but we will eventually want to log/stat
+	_ = h.Marker.Mark(r.Context(), id)
+
 	w.WriteHeader(http.StatusAccepted)
 }
 
@@ -68,7 +72,7 @@ func (h *DigesterHandler) Get(w http.ResponseWriter, r *http.Request) {
 	case types.ErrInProgress:
 		w.WriteHeader(http.StatusNoContent)
 		return
-	case types.NotFound:
+	case types.ErrNotFound:
 		w.WriteHeader(http.StatusNotFound)
 		return
 	default:

@@ -115,7 +115,7 @@ func TestGetStorageErrors(t *testing.T) {
 		},
 		{
 			Name:               "GET_not_found",
-			Error:              types.NotFound{},
+			Error:              types.ErrNotFound{},
 			ExpectedStatusCode: http.StatusNotFound,
 		},
 		{
@@ -314,12 +314,50 @@ func TestPostHappyPath(t *testing.T) {
 	storageMock.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(false, nil)
 	queuerMock := NewMockQueuer(ctrl)
 	queuerMock.EXPECT().Queue(gomock.Any(), gomock.Any(), expectedStart, expectedStop).Return(nil)
+	markerMock := NewMockMarker(ctrl)
+	markerMock.EXPECT().Mark(gomock.Any(), gomock.Any()).Return(nil)
 
 	h := DigesterHandler{
 		Storage: storageMock,
 		Queuer:  queuerMock,
+		Marker:  markerMock,
 	}
 	h.Post(w, r)
 
+	assert.Equal(t, http.StatusAccepted, w.Result().StatusCode)
+}
+
+func TestPostUnsuccessfulMark(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	start := time.Now()
+	stop := time.Now()
+	r, _ := http.NewRequest(http.MethodPost, "/", nil)
+	w := httptest.NewRecorder()
+
+	q := r.URL.Query()
+	q.Set("start", start.Format(time.RFC3339Nano))
+	q.Set("stop", stop.Format(time.RFC3339Nano))
+	r.URL.RawQuery = q.Encode()
+
+	expectedStart := &timeMatcher{start.Truncate(time.Minute)}
+	expectedStop := &timeMatcher{stop.Truncate(time.Minute)}
+
+	storageMock := NewMockStorage(ctrl)
+	storageMock.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(false, nil)
+	queuerMock := NewMockQueuer(ctrl)
+	queuerMock.EXPECT().Queue(gomock.Any(), gomock.Any(), expectedStart, expectedStop).Return(nil)
+	markerMock := NewMockMarker(ctrl)
+	markerMock.EXPECT().Mark(gomock.Any(), gomock.Any()).Return(errors.New("OOPS"))
+
+	h := DigesterHandler{
+		Storage: storageMock,
+		Queuer:  queuerMock,
+		Marker:  markerMock,
+	}
+	h.Post(w, r)
+
+	// Shouldn't blow up
 	assert.Equal(t, http.StatusAccepted, w.Result().StatusCode)
 }
