@@ -15,6 +15,10 @@
   name = "github.com/aws/aws-sdk-go"
   version = "1.15.55"
 
+[[constraint]]
+  name = "bitbucket.org/atlassian/go-vpcflow"
+  revision = "f2d3d5411c4571c49cd293092c7cf2cf5001f245"
+
 [prune]
   go-tests = true
   unused-packages = true
