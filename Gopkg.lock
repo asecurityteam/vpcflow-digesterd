@@ -2,11 +2,12 @@
 
 
 [[projects]]
+  branch = "master"
   digest = "1:157dc8e4e32fe36ffc244a88c02078d01239f95bba031c614489067d0ce1410b"
   name = "bitbucket.org/atlassian/go-vpcflow"
   packages = ["."]
   pruneopts = "UT"
-  revision = "f2d3d5411c4571c49cd293092c7cf2cf5001f245"
+  revision = "64bf78ee8f1855bb12783a3c70df6390c58a390a"
 
 [[projects]]
   digest = "1:f5767ea5f9bcddc5b894ce8f639043f05c170664c8430036825a65889a850f8c"

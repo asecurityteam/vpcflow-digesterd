@@ -84,22 +84,16 @@ func main() {
 		Marker:           marker,
 		DigesterProvider: newDigester(vpcflowBucket, s3Client, maxBytes, maxConcurrent),
 	}
-	digestRouter := chi.NewRouter()
-	digestRouter.Post("/", digesterHandler.Post)
-	digestRouter.Get("/", digesterHandler.Get)
-
-	streamConsumer := chi.NewRouter()
-	streamConsumer.Post("/", produceHandler.ServeHTTP)
-
-	app := chi.NewRouter()
-	app.Mount("/digest", digestRouter)
-	app.Mount("/{topic}/{event}", streamConsumer)
+	router := chi.NewRouter()
+	router.Post("/", digesterHandler.Post)
+	router.Get("/", digesterHandler.Get)
+	router.Post("/{topic}/{event}", produceHandler.ServeHTTP)
 
 	stop := make(chan os.Signal)
 	signal.Notify(stop, os.Interrupt)
 	s := &http.Server{
 		Addr:    ":" + port,
-		Handler: app,
+		Handler: router,
 	}
 
 	go func() {
