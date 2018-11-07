@@ -86,7 +86,6 @@ func TestHTTPBadRequest(t *testing.T) {
 	}
 
 	for _, tt := range tc {
-		// nolint[:scopelint]
 		t.Run(tt.Name, func(t *testing.T) {
 			r, _ := http.NewRequest(tt.Method, "/", nil)
 			w := httptest.NewRecorder()
@@ -127,7 +126,6 @@ func TestGetStorageErrors(t *testing.T) {
 	}
 
 	for _, tt := range tc {
-		// nolint[:scopelint]
 		t.Run(tt.Name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()

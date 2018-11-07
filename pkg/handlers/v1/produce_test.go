@@ -48,7 +48,6 @@ func TestProduceBadRequst(t *testing.T) {
 	}
 
 	for _, tt := range tc {
-		// nolint[:scopelint]
 		t.Run(tt.Name, func(t *testing.T) {
 			r, _ := http.NewRequest(http.MethodPost, "/", ioutil.NopCloser(bytes.NewReader([]byte(tt.Payload))))
 			w := httptest.NewRecorder()
