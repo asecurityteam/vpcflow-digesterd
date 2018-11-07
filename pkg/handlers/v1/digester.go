@@ -25,7 +25,7 @@ type DigesterHandler struct {
 func (h *DigesterHandler) Post(w http.ResponseWriter, r *http.Request) {
 	start, stop, err := extractInput(r)
 	if err != nil {
-		writeResponse(w, http.StatusBadRequest, err.Error())
+		writeJSONResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	id := computeID(start, stop)
@@ -33,21 +33,21 @@ func (h *DigesterHandler) Post(w http.ResponseWriter, r *http.Request) {
 	switch err.(type) {
 	case nil:
 	case types.ErrInProgress:
-		writeResponse(w, http.StatusConflict, err.Error())
+		writeJSONResponse(w, http.StatusConflict, err.Error())
 		return
 	default:
-		writeResponse(w, http.StatusInternalServerError, "Internal Server Error")
+		writeJSONResponse(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 	// if data is returned, a digest already exists. return 409 and exit
 	if exists {
 		msg := fmt.Sprintf("digest %s already exists", id)
-		writeResponse(w, http.StatusConflict, msg)
+		writeJSONResponse(w, http.StatusConflict, msg)
 		return
 	}
 
 	if err := h.Queuer.Queue(r.Context(), id, start, stop); err != nil {
-		writeResponse(w, http.StatusInternalServerError, "Internal Server Error")
+		writeJSONResponse(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 
@@ -61,7 +61,7 @@ func (h *DigesterHandler) Post(w http.ResponseWriter, r *http.Request) {
 func (h *DigesterHandler) Get(w http.ResponseWriter, r *http.Request) {
 	start, stop, err := extractInput(r)
 	if err != nil {
-		writeResponse(w, http.StatusBadRequest, err.Error())
+		writeJSONResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	id := computeID(start, stop)
@@ -76,7 +76,7 @@ func (h *DigesterHandler) Get(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	default:
-		writeResponse(w, http.StatusInternalServerError, "Internal Server Error")
+		writeJSONResponse(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 
@@ -115,7 +115,7 @@ func computeID(start, stop time.Time) string {
 }
 
 // write the http response with the given status code and message
-func writeResponse(w http.ResponseWriter, statusCode int, message string) {
+func writeJSONResponse(w http.ResponseWriter, statusCode int, message string) {
 	msg := struct {
 		Message string `json:"message"`
 	}{
