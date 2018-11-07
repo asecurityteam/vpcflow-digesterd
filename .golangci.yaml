@@ -49,6 +49,7 @@ linters:
     - interfacer
     - lll
     - gocyclo
+    - gochecknoglobals
 issues:
   exclude-use-default: false
   exclude:
