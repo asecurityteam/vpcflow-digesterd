@@ -17,6 +17,7 @@ import (
 	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/stream"
 	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/types"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
@@ -33,7 +34,6 @@ func mustEnv(key string) string {
 
 func main() {
 	port := mustEnv("PORT")
-	region := mustEnv("REGION")
 	vpcflowBucket := mustEnv("VPC_FLOW_LOGS_BUCKET")
 	maxBytesPrefetch := mustEnv("VPC_MAX_BYTES_PREFETCH")
 	maxConcurrentPrefetch := mustEnv("VPC_MAX_CONCURRENT_PREFETCH")
@@ -54,9 +54,8 @@ func main() {
 		panic(err.Error())
 	}
 
-	cfg := aws.NewConfig() // TODO: set credential provider
-	cfg.Region = &region
-	s3Client := s3.New(session.New(cfg))
+	s3Client := createS3Client()
+
 	store := &storage.InProgress{
 		Bucket: progressBucket,
 		Client: s3Client,
@@ -107,6 +106,31 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	_ = s.Shutdown(ctx)
+}
+
+func createS3Client() *s3.S3 {
+	region := mustEnv("REGION")
+	useIAM := mustEnv("USE_IAM")
+	useIAMFlag, err := strconv.ParseBool(useIAM)
+	if err != nil {
+		panic(err.Error())
+	}
+	cfg := aws.NewConfig()
+	cfg.Region = aws.String(region)
+	if !useIAMFlag {
+		cfg.Credentials = credentials.NewChainCredentials([]credentials.Provider{
+			&credentials.EnvProvider{},
+			&credentials.SharedCredentialsProvider{
+				Filename: os.Getenv("AWS_CREDENTIALS_FILE"),
+				Profile:  os.Getenv("AWS_CREDENTIALS_PROFILE"),
+			},
+		})
+	}
+	awsSession, err := session.NewSession(cfg)
+	if err != nil {
+		panic(err.Error())
+	}
+	return s3.New(awsSession)
 }
 
 func newDigester(bucket string, client s3iface.S3API, maxBytes int64, concurrency int) types.DigesterProvider {

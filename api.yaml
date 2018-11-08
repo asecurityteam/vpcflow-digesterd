@@ -1,0 +1,54 @@
+swagger: "2.0"
+info:
+  description: "VPC Flow Log Digester API."
+  version: "1.0.0"
+  title: "VPC Digester"
+basePath: "/"
+schemes:
+  - "https"
+produces:
+  - "application/octet-stream"
+paths:
+  "/":
+    post:
+      summary: "Generate a digest."
+      parameters:
+        - name: "start"
+          in: "query"
+          description: "The start time of the digest. Input will be parsed as an RFC3339Nano timestamp, and will be truncated to minute precision."
+          required: true
+          type: "string"
+          format: "date-time"
+        - name: "stop"
+          in: "query"
+          description: "The stop time of the digest. Input will be parsed as an RFC3339Nano timestamp, and will be truncated to minute precision."
+          required: true
+          type: "string"
+          format: "date-time"
+      responses:
+        409:
+          description: "The digest for this range already exists, or is in progress."
+        202:
+          description: "The digest will be created."
+    get:
+      summary: "Fetch a complete digest."
+      parameters:
+        - name: "start"
+          in: "query"
+          description: "The start time of the digest. Input will be parsed as an RFC3339Nano timestamp, and will be truncated to minute precision."
+          required: true
+          type: "string"
+          format: "date-time"
+        - name: "stop"
+          in: "query"
+          description: "The stop time of the digest. Input will be parsed as an RFC3339Nano timestamp, and will be truncated to minute precision."
+          required: true
+          type: "string"
+          format: "date-time"
+      responses:
+        404:
+          description: "The digest for this range does not exist yet."
+        204:
+          description: "The digest is created but not yet complete."
+        200:
+          description: "Success."
