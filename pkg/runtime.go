@@ -3,12 +3,12 @@ package digesterd
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 
 	"bitbucket.org/atlassian/go-vpcflow"
@@ -120,22 +120,26 @@ type Runtime struct {
 
 // Run runs the application
 func (r *Runtime) Run() error {
-	stop := make(chan os.Signal)
-	signal.Notify(stop, os.Interrupt)
+	stop := make(chan os.Signal, 2)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+	exit := make(chan error, 1)
 
 	go func() {
-		if err := r.Server.ListenAndServe(); err != nil {
-			log.Fatal(err.Error())
-		}
+		exit <- r.Server.ListenAndServe()
 	}()
 
-	<-stop
+	go func() {
+		<-stop
+		exit <- nil
+	}()
+
+	err := <-exit
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	_ = r.Server.Shutdown(ctx)
 
-	return nil
+	return err
 }
 
 func mustEnv(key string) string {
@@ -173,19 +177,19 @@ func createS3Client() (*s3.S3, error) {
 
 func newDigester(bucket string, client s3iface.S3API, maxBytes int64, concurrency int) types.DigesterProvider {
 	return func(start, stop time.Time) vpcflow.Digester {
-		bucketIt := &vpcflow.BucketStateIterator{
+		bucketIter := &vpcflow.BucketStateIterator{
 			Bucket: bucket,
 			Queue:  client,
 		}
-		filterIt := &vpcflow.BucketFilter{
-			BucketIterator: bucketIt,
+		filterIter := &vpcflow.BucketFilter{
+			BucketIterator: bucketIter,
 			Filter: vpcflow.LogFileTimeFilter{
 				Start: start,
 				End:   stop,
 			},
 		}
 		readerIt := &vpcflow.BucketIteratorReader{
-			BucketIterator: filterIt,
+			BucketIterator: filterIter,
 			FetchPolicy:    vpcflow.NewPrefetchPolicy(client, maxBytes, concurrency),
 		}
 		return &vpcflow.ReaderDigester{Reader: readerIt}
