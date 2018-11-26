@@ -18,7 +18,7 @@ A digests is defined by a window of time specified in the `start` and `stop` RES
 
 | Name                        | Required | Description                                                                                                                     | Example                                         |
 |-----------------------------|:--------:|---------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------|
-| PORT                        |    Yes   | HTTP Port for application                                                                                                       | 8080                                            |
+| PORT                        |    No   | HTTP Port for application (defaults to 8080)                                                                                     | 8080                                            |
 | VPC\_FLOW\_LOGS\_BUCKET        |    Yes   | Bucket Name which holds VPC flow logs                                                                                           | vpc-flow-logs                                   |
 | VPC\_MAX\_BYTES\_PREFETCH      |    Yes   | When making the digest, the max number of bytes to prefetch from the bucket objects                                             | 150000000                                       |
 | VPC\_MAX\_CONCURRENT\_PREFETCH |    Yes   | When making the digest, the max number of bucket objects to prefetch                                                            | 2                                               |
