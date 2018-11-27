@@ -36,20 +36,22 @@ type Server interface {
 
 // Service is a container for all of the pluggable modules used by the service
 type Service struct {
-	S3Client s3iface.S3API
-	Queuer   types.Queuer
-	Storage  types.Storage
-	Marker   types.Marker
+	Queuer  types.Queuer
+	Storage types.Storage
+	Marker  types.Marker
 }
 
 func (s *Service) init() error {
 	var err error
-	if s.S3Client == nil {
-		s.S3Client, err = createS3Client()
-		if err != nil {
-			return err
-		}
+	storageClient, err := createS3Client(mustEnv("DIGEST_STORAGE_BUCKET_REGION"))
+	if err != nil {
+		return err
 	}
+	progressClient, err := createS3Client(mustEnv("DIGEST_PROGRESS_BUCKET"))
+	if err != nil {
+		return err
+	}
+
 	if s.Queuer == nil {
 		streamApplianceEndpoint := mustEnv("STREAM_APPLIANCE_ENDPOINT")
 		streamApplianceURL, err := url.Parse(streamApplianceEndpoint)
@@ -65,17 +67,17 @@ func (s *Service) init() error {
 	if s.Storage == nil {
 		s.Storage = &storage.InProgress{
 			Bucket: mustEnv("DIGEST_PROGRESS_BUCKET"),
-			Client: s.S3Client,
+			Client: progressClient,
 			Storage: &storage.S3{
 				Bucket: mustEnv("DIGEST_STORAGE_BUCKET"),
-				Client: s.S3Client,
+				Client: storageClient,
 			},
 		}
 	}
 	if s.Marker == nil {
 		s.Marker = &storage.ProgressMarker{
 			Bucket: mustEnv("DIGEST_PROGRESS_BUCKET"),
-			Client: s.S3Client,
+			Client: progressClient,
 		}
 	}
 	return nil
@@ -87,6 +89,7 @@ func (s *Service) BindRoutes(router chi.Router) error {
 		return err
 	}
 	vpcflowBucket := mustEnv("VPC_FLOW_LOGS_BUCKET")
+	vpcflowRegion := mustEnv("VPC_FLOW_LOGS_BUCKET_REGION")
 	maxBytesPrefetch := mustEnv("VPC_MAX_BYTES_PREFETCH")
 	maxConcurrentPrefetch := mustEnv("VPC_MAX_CONCURRENT_PREFETCH")
 	maxBytes, err := strconv.ParseInt(maxBytesPrefetch, 10, 64)
@@ -94,6 +97,10 @@ func (s *Service) BindRoutes(router chi.Router) error {
 		return err
 	}
 	maxConcurrent, err := strconv.Atoi(maxConcurrentPrefetch)
+	if err != nil {
+		return err
+	}
+	s3Client, err := createS3Client(vpcflowRegion)
 	if err != nil {
 		return err
 	}
@@ -105,7 +112,7 @@ func (s *Service) BindRoutes(router chi.Router) error {
 	produceHandler := &v1.Produce{
 		Storage:          s.Storage,
 		Marker:           s.Marker,
-		DigesterProvider: newDigester(vpcflowBucket, s.S3Client, maxBytes, maxConcurrent),
+		DigesterProvider: newDigester(vpcflowBucket, s3Client, maxBytes, maxConcurrent),
 	}
 	router.Post("/", digesterHandler.Post)
 	router.Get("/", digesterHandler.Get)
@@ -150,8 +157,7 @@ func mustEnv(key string) string {
 	return val
 }
 
-func createS3Client() (*s3.S3, error) {
-	region := mustEnv("REGION")
+func createS3Client(region string) (*s3.S3, error) {
 	useIAM := mustEnv("USE_IAM")
 	useIAMFlag, err := strconv.ParseBool(useIAM)
 	if err != nil {
@@ -188,10 +194,10 @@ func newDigester(bucket string, client s3iface.S3API, maxBytes int64, concurrenc
 				End:   stop,
 			},
 		}
-		readerIt := &vpcflow.BucketIteratorReader{
+		readerIter := &vpcflow.BucketIteratorReader{
 			BucketIterator: filterIter,
 			FetchPolicy:    vpcflow.NewPrefetchPolicy(client, maxBytes, concurrency),
 		}
-		return &vpcflow.ReaderDigester{Reader: readerIt}
+		return &vpcflow.ReaderDigester{Reader: readerIter}
 	}
 }
