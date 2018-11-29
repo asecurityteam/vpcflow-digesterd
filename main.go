@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"bitbucket.org/atlassian/vpcflow-digesterd/pkg"
+	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/plugins"
 	"github.com/go-chi/chi"
 )
 
@@ -29,6 +30,9 @@ func main() {
 
 	r := &digesterd.Runtime{
 		Server: server,
+		SignalHandlers: []plugins.SignalHandler{
+			plugins.OSHandler,
+		},
 	}
 
 	if err := r.Run(); err != nil {
