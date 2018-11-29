@@ -11,7 +11,6 @@ import (
 
 	"bitbucket.org/atlassian/go-vpcflow"
 	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/handlers/v1"
-	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/plugins"
 	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/storage"
 	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/stream"
 	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/types"
@@ -122,7 +121,7 @@ func (s *Service) BindRoutes(router chi.Router) error {
 // Runtime is the app configuration and execution point
 type Runtime struct {
 	Server      Server
-	ExitSignals plugins.ExitSignals
+	ExitSignals types.ExitSignals
 }
 
 // Run runs the application
