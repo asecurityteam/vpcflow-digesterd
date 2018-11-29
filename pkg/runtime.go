@@ -121,18 +121,18 @@ func (s *Service) BindRoutes(router chi.Router) error {
 
 // Runtime is the app configuration and execution point
 type Runtime struct {
-	Server         Server
-	SignalHandlers []plugins.SignalHandler
+	Server      Server
+	ExitSignals plugins.ExitSignals
 }
 
 // Run runs the application
 func (r *Runtime) Run() error {
 	exit := make(chan error)
 
-	for _, sh := range r.SignalHandlers {
-		go func(sh plugins.SignalHandler) {
-			sh(exit)
-		}(sh)
+	for _, c := range r.ExitSignals {
+		go func(c chan error) {
+			exit <- <-c
+		}(c)
 	}
 
 	go func() {

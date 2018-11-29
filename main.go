@@ -30,8 +30,8 @@ func main() {
 
 	r := &digesterd.Runtime{
 		Server: server,
-		SignalHandlers: []plugins.SignalHandler{
-			plugins.OSHandler,
+		ExitSignals: plugins.ExitSignals{
+			plugins.OS(),
 		},
 	}
 
