@@ -3,7 +3,9 @@ package main
 import (
 	"net/http"
 	"os"
+	"time"
 
+	"bitbucket.org/atlassian/transport"
 	"bitbucket.org/atlassian/vpcflow-digesterd/pkg"
 	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/plugins"
 	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/types"
@@ -11,8 +13,14 @@ import (
 )
 
 func main() {
+	retrier := transport.NewRetrier(
+		transport.NewFixedBackoffPolicy(50*time.Millisecond),
+		transport.NewLimitedRetryPolicy(3),
+		transport.NewStatusCodeRetryPolicy(500, 502, 503),
+	)
+	decorators := transport.Chain{retrier}
 	router := chi.NewRouter()
-	service := &digesterd.Service{}
+	service := &digesterd.Service{Decorators: decorators}
 	if err := service.BindRoutes(router); err != nil {
 		panic(err.Error())
 	}
