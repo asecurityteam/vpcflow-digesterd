@@ -2,6 +2,7 @@ package v1
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 
@@ -16,6 +17,7 @@ type payload struct {
 
 // Produce is a handler which performs the digest job, and stores the digest
 type Produce struct {
+	ErrorCallback    types.ErrorCallback
 	Storage          types.Storage
 	Marker           types.Marker
 	DigesterProvider types.DigesterProvider
@@ -25,40 +27,49 @@ type Produce struct {
 func (h *Produce) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var body payload
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		h.ErrorCallback(r.Context(), http.StatusBadRequest, err)
 		writeTextResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if body.ID == "" {
-		writeTextResponse(w, http.StatusBadRequest, "missing ID field")
+		msg := "missing ID field"
+		h.ErrorCallback(r.Context(), http.StatusBadRequest, errors.New(msg))
+		writeTextResponse(w, http.StatusBadRequest, msg)
 		return
 	}
 
 	start, err := time.Parse(time.RFC3339Nano, body.Start)
 	if err != nil {
+		h.ErrorCallback(r.Context(), http.StatusBadRequest, err)
 		writeTextResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	stop, err := time.Parse(time.RFC3339Nano, body.Stop)
 	if err != nil {
+		h.ErrorCallback(r.Context(), http.StatusBadRequest, err)
 		writeTextResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if !stop.After(start) {
-		writeTextResponse(w, http.StatusBadRequest, "invalid time range")
+		msg := "invalid time range"
+		h.ErrorCallback(r.Context(), http.StatusBadRequest, errors.New(msg))
+		writeTextResponse(w, http.StatusBadRequest, msg)
 		return
 	}
 
 	digester := h.DigesterProvider(start, stop)
 	digest, err := digester.Digest()
 	if err != nil {
+		h.ErrorCallback(r.Context(), http.StatusInternalServerError, err)
 		writeTextResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	defer digest.Close()
 	if err := h.Storage.Store(r.Context(), body.ID, digest); err != nil {
+		h.ErrorCallback(r.Context(), http.StatusInternalServerError, err)
 		writeTextResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -67,6 +78,7 @@ func (h *Produce) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// report a failure to the caller signifying that the operation should be retried. This will
 	// hopefully mitigate the amount of invalid state occurrence we may incur
 	if err := h.Marker.Unmark(r.Context(), body.ID); err != nil {
+		h.ErrorCallback(r.Context(), http.StatusInternalServerError, err)
 		writeTextResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}

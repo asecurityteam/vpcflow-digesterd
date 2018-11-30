@@ -23,6 +23,14 @@
   name = "bitbucket.org/atlassian/transport"
   version = "1.1.0"
 
+[[constraint]]
+  name = "bitbucket.org/atlassian/logevent"
+  version = "^1.0.2"
+
+[[constraint]]
+  name = "github.com/rs/xstats"
+  branch = "master"
+
 [prune]
   go-tests = true
   unused-packages = true

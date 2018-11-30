@@ -16,15 +16,17 @@ var digestNamespace = uuid.NewSHA1(uuid.Nil, []byte("digest"))
 
 // DigesterHandler handles incoming HTTP requests for starting and retrieving new digests
 type DigesterHandler struct {
-	Storage types.Storage
-	Marker  types.Marker
-	Queuer  types.Queuer
+	ErrorCallback types.ErrorCallback
+	Storage       types.Storage
+	Marker        types.Marker
+	Queuer        types.Queuer
 }
 
 // Post creates a new digest
 func (h *DigesterHandler) Post(w http.ResponseWriter, r *http.Request) {
 	start, stop, err := extractInput(r)
 	if err != nil {
+		h.ErrorCallback(r.Context(), http.StatusBadRequest, err)
 		writeJSONResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -33,9 +35,11 @@ func (h *DigesterHandler) Post(w http.ResponseWriter, r *http.Request) {
 	switch err.(type) {
 	case nil:
 	case types.ErrInProgress:
+		h.ErrorCallback(r.Context(), http.StatusConflict, err)
 		writeJSONResponse(w, http.StatusConflict, err.Error())
 		return
 	default:
+		h.ErrorCallback(r.Context(), http.StatusInternalServerError, err)
 		writeJSONResponse(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
@@ -46,13 +50,14 @@ func (h *DigesterHandler) Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.Queuer.Queue(r.Context(), id, start, stop); err != nil {
+	if err = h.Queuer.Queue(r.Context(), id, start, stop); err != nil {
+		h.ErrorCallback(r.Context(), http.StatusInternalServerError, err)
 		writeJSONResponse(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 
-	// TODO: it's not necessarily a fatal error if this happens, but we will eventually want to log/stat
-	_ = h.Marker.Mark(r.Context(), id)
+	err = h.Marker.Mark(r.Context(), id)
+	h.ErrorCallback(r.Context(), http.StatusAccepted, err)
 
 	w.WriteHeader(http.StatusAccepted)
 }
@@ -61,6 +66,7 @@ func (h *DigesterHandler) Post(w http.ResponseWriter, r *http.Request) {
 func (h *DigesterHandler) Get(w http.ResponseWriter, r *http.Request) {
 	start, stop, err := extractInput(r)
 	if err != nil {
+		h.ErrorCallback(r.Context(), http.StatusBadRequest, err)
 		writeJSONResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -70,12 +76,15 @@ func (h *DigesterHandler) Get(w http.ResponseWriter, r *http.Request) {
 	case nil:
 		defer body.Close()
 	case types.ErrInProgress:
+		h.ErrorCallback(r.Context(), http.StatusNoContent, err)
 		w.WriteHeader(http.StatusNoContent)
 		return
 	case types.ErrNotFound:
+		h.ErrorCallback(r.Context(), http.StatusNotFound, err)
 		w.WriteHeader(http.StatusNotFound)
 		return
 	default:
+		h.ErrorCallback(r.Context(), http.StatusInternalServerError, err)
 		writeJSONResponse(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}

@@ -63,6 +63,9 @@ func (s *Service) init() error {
 		return err
 	}
 
+	if s.ErrorCallback == nil {
+		s.ErrorCallback = func(_ context.Context, _ int, _ error) {}
+	}
 	if s.Queuer == nil {
 		streamApplianceEndpoint := mustEnv("STREAM_APPLIANCE_ENDPOINT")
 		streamApplianceURL, err := url.Parse(streamApplianceEndpoint)

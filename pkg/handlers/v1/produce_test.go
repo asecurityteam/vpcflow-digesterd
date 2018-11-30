@@ -51,7 +51,7 @@ func TestProduceBadRequst(t *testing.T) {
 		t.Run(tt.Name, func(t *testing.T) {
 			r, _ := http.NewRequest(http.MethodPost, "/", ioutil.NopCloser(bytes.NewReader([]byte(tt.Payload))))
 			w := httptest.NewRecorder()
-			handler := &Produce{}
+			handler := &Produce{ErrorCallback: nopCallback}
 			handler.ServeHTTP(w, r)
 			assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
 		})
@@ -71,6 +71,7 @@ func TestDigestError(t *testing.T) {
 	r, _ := http.NewRequest(http.MethodPost, "/", ioutil.NopCloser(bytes.NewReader(payload)))
 	w := httptest.NewRecorder()
 	handler := &Produce{
+		ErrorCallback:    nopCallback,
 		DigesterProvider: func(_, _ time.Time) vpcflow.Digester { return digesterMock },
 	}
 	handler.ServeHTTP(w, r)
@@ -93,6 +94,7 @@ func TestStorageError(t *testing.T) {
 	r, _ := http.NewRequest(http.MethodPost, "/", ioutil.NopCloser(bytes.NewReader(payload)))
 	w := httptest.NewRecorder()
 	handler := &Produce{
+		ErrorCallback:    nopCallback,
 		Storage:          storageMock,
 		DigesterProvider: func(_, _ time.Time) vpcflow.Digester { return digesterMock },
 	}
@@ -119,6 +121,7 @@ func TestMarkerError(t *testing.T) {
 	r, _ := http.NewRequest(http.MethodPost, "/", ioutil.NopCloser(bytes.NewReader(payload)))
 	w := httptest.NewRecorder()
 	handler := &Produce{
+		ErrorCallback:    nopCallback,
 		Storage:          storageMock,
 		Marker:           markerMock,
 		DigesterProvider: func(_, _ time.Time) vpcflow.Digester { return digesterMock },
@@ -146,6 +149,7 @@ func TestHappyPath(t *testing.T) {
 	r, _ := http.NewRequest(http.MethodPost, "/", ioutil.NopCloser(bytes.NewReader(payload)))
 	w := httptest.NewRecorder()
 	handler := &Produce{
+		ErrorCallback:    nopCallback,
 		Storage:          storageMock,
 		Marker:           markerMock,
 		DigesterProvider: func(_, _ time.Time) vpcflow.Digester { return digesterMock },

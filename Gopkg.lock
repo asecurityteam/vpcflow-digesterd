@@ -10,7 +10,26 @@
   revision = "64bf78ee8f1855bb12783a3c70df6390c58a390a"
 
 [[projects]]
-  digest = "1:f5767ea5f9bcddc5b894ce8f639043f05c170664c8430036825a65889a850f8c"
+  digest = "1:fc7ac93c8a978bd4ccbe0c85fdca0e7723d72be1f76feb2b162b970ae6276aa2"
+  name = "bitbucket.org/atlassian/logevent"
+  packages = [
+    ".",
+    "http",
+  ]
+  pruneopts = "UT"
+  revision = "675fa127247ec5f96142b7c71d5bd7d04b730a4f"
+  version = "1.0.2"
+
+[[projects]]
+  digest = "1:f5f53e15dfd7a1609de60298c1809576472adb76ce65f7a0849fafd244b2f232"
+  name = "bitbucket.org/atlassian/transport"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "4d788ab0e2375a78205f463a54f446a6be4a934c"
+  version = "1.1.0"
+
+[[projects]]
+  digest = "1:8454727f7783a48b64281b7ef9eb56636ea27c0a6704502e96d1383204bdda2b"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -51,8 +70,8 @@
     "service/sts",
   ]
   pruneopts = "UT"
-  revision = "870fa4307c5f57c14153c695df7b87af1acdcbf1"
-  version = "v1.15.66"
+  revision = "ceab7b7ac6f535d1397f124620720b5145f1ad59"
+  version = "v1.15.88"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -61,6 +80,14 @@
   pruneopts = "UT"
   revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
   version = "v1.1.1"
+
+[[projects]]
+  digest = "1:af43bdaaf86655a2343f113e9b293bbc16b12099eaeb223982bbe4d4c22ba14d"
+  name = "github.com/fatih/structs"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "4966fc68f5b7593aafa6cbbba2d65ec6e1416047"
+  version = "v1.1.0"
 
 [[projects]]
   digest = "1:b9914f85d95a0968bafd1be1908ba29e2eafafd88d6fd13696be42bf5368c380"
@@ -79,12 +106,12 @@
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:3a26588bc48b96825977c1b3df964f8fd842cd6860cc26370588d3563433cf11"
+  digest = "1:236d7e1bdb50d8f68559af37dbcf9d142d56b431c9b2176d41e2a009b664cda8"
   name = "github.com/google/uuid"
   packages = ["."]
   pruneopts = "UT"
-  revision = "d460ce9f8df2e77fb1ba55ca87fafed96c607494"
-  version = "v1.0.0"
+  revision = "9b3b1e0f5f99ae461456d768e7d301a7acdaa2d8"
+  version = "v1.1.0"
 
 [[projects]]
   digest = "1:e22af8c7518e1eab6f2eab2b7d7558927f816262586cd6ed9f349c97a6c285c4"
@@ -102,6 +129,37 @@
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:9665a593c0199c193341b8b110e31b19c899923711fc70bde2c2f3eb2d337526"
+  name = "github.com/rs/xhandler"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "d9d9599b6aaf6a058cb7b1f48291ded2cbd13390"
+  version = "v1.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:b312ce0585169062a8b55dd8ad9bacd54cc98b056670b8638da86b5535ebcd41"
+  name = "github.com/rs/xstats"
+  packages = [
+    ".",
+    "dogstatsd",
+  ]
+  pruneopts = "UT"
+  revision = "c67367528e160e557423e4d87059614d8c31a582"
+
+[[projects]]
+  digest = "1:6112a5eaec2ec65df289ccbb7a730aaf03e3c5cce6c906d367ccf9b7ac567604"
+  name = "github.com/rs/zerolog"
+  packages = [
+    ".",
+    "internal/cbor",
+    "internal/json",
+  ]
+  pruneopts = "UT"
+  revision = "8747b7b3a51b5d08ee7ac50eaf4869edaf9f714a"
+  version = "v1.11.0"
+
+[[projects]]
   digest = "1:18752d0b95816a1b777505a97f71c7467a8445b8ffb55631a7bf779f6ba4fa83"
   name = "github.com/stretchr/testify"
   packages = ["assert"]
@@ -115,15 +173,19 @@
   name = "golang.org/x/net"
   packages = ["context"]
   pruneopts = "UT"
-  revision = "c44066c5c816ec500d459a2a324a753f78531ae0"
+  revision = "fae4c4e3ad76c295c3d6d259f898136b4bf833a8"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
     "bitbucket.org/atlassian/go-vpcflow",
+    "bitbucket.org/atlassian/logevent",
+    "bitbucket.org/atlassian/logevent/http",
+    "bitbucket.org/atlassian/transport",
     "github.com/aws/aws-sdk-go/aws",
     "github.com/aws/aws-sdk-go/aws/awserr",
+    "github.com/aws/aws-sdk-go/aws/credentials",
     "github.com/aws/aws-sdk-go/aws/request",
     "github.com/aws/aws-sdk-go/aws/session",
     "github.com/aws/aws-sdk-go/service/s3",
@@ -133,6 +195,8 @@
     "github.com/go-chi/chi",
     "github.com/golang/mock/gomock",
     "github.com/google/uuid",
+    "github.com/rs/xstats",
+    "github.com/rs/xstats/dogstatsd",
     "github.com/stretchr/testify/assert",
   ]
   solver-name = "gps-cdcl"
