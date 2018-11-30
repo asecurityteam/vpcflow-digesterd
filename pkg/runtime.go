@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"bitbucket.org/atlassian/go-vpcflow"
+	"bitbucket.org/atlassian/transport"
 	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/handlers/v1"
 	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/storage"
 	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/stream"
@@ -34,9 +35,24 @@ type Server interface {
 
 // Service is a container for all of the pluggable modules used by the service
 type Service struct {
-	Queuer  types.Queuer
+	// Transport is a custom RoundTripper to use with the default Queuer module.
+	// If no RoundTripper is provided, a default will be used.
+	Transport http.RoundTripper
+
+	// Decorators are a decorator chain to be used with the Queuer HTTP client
+	Decorators transport.Chain
+
+	// Queuer is responsible for queuing digester jobs which will eventually be consumed
+	// by the Produce handler. The built in Queuer POSTs to an HTTP endpoint.
+	Queuer types.Queuer
+
+	// Storage provides a mechanism to hook into a persistent store for the digests. The
+	// built in Storage uses S3 as the persistent storage for digest blobs.
 	Storage types.Storage
-	Marker  types.Marker
+
+	// Marker is responsible for marking which digests jobs are inprogress. The built in
+	// Marker uses S3 to hold this state.
+	Marker types.Marker
 }
 
 func (s *Service) init() error {
@@ -56,8 +72,29 @@ func (s *Service) init() error {
 		if err != nil {
 			return err
 		}
+		if s.Decorators == nil {
+			retrier := transport.NewRetrier(
+				transport.NewFixedBackoffPolicy(50*time.Millisecond),
+				transport.NewLimitedRetryPolicy(3),
+				transport.NewStatusCodeRetryPolicy(500, 502, 503),
+			)
+			s.Decorators = transport.Chain{retrier}
+		}
+		if s.Transport == nil {
+			base := transport.NewFactory(
+				transport.OptionDefaultTransport,
+				transport.OptionDisableCompression(true),
+				transport.OptionTLSHandshakeTimeout(time.Second),
+				transport.OptionMaxIdleConns(100),
+			)
+			s.Transport = transport.NewRecycler(
+				s.Decorators.ApplyFactory(base),
+				transport.RecycleOptionTTL(10*time.Minute),
+				transport.RecycleOptionTTLJitter(time.Minute),
+			)
+		}
 		s.Queuer = &stream.DigestQueuer{
-			Client:   &http.Client{},
+			Client:   &http.Client{Transport: s.Transport},
 			Endpoint: streamApplianceURL,
 			Topic:    mustEnv("STREAM_APPLIANCE_TOPIC"),
 		}
