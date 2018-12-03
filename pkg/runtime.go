@@ -6,9 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/signal"
 	"strconv"
-	"syscall"
 	"time"
 
 	"bitbucket.org/atlassian/go-vpcflow"
@@ -122,22 +120,22 @@ func (s *Service) BindRoutes(router chi.Router) error {
 
 // Runtime is the app configuration and execution point
 type Runtime struct {
-	Server Server
+	Server      Server
+	ExitSignals types.ExitSignals
 }
 
 // Run runs the application
 func (r *Runtime) Run() error {
-	stop := make(chan os.Signal, 2)
-	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
-	exit := make(chan error, 1)
+	exit := make(chan error)
+
+	for _, c := range r.ExitSignals {
+		go func(c chan error) {
+			exit <- <-c
+		}(c)
+	}
 
 	go func() {
 		exit <- r.Server.ListenAndServe()
-	}()
-
-	go func() {
-		<-stop
-		exit <- nil
 	}()
 
 	err := <-exit
