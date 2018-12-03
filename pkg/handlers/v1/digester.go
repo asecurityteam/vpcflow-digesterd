@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/logs"
 	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/types"
 	"github.com/google/uuid"
 )
@@ -16,17 +17,19 @@ var digestNamespace = uuid.NewSHA1(uuid.Nil, []byte("digest"))
 
 // DigesterHandler handles incoming HTTP requests for starting and retrieving new digests
 type DigesterHandler struct {
-	ErrorCallback types.ErrorCallback
-	Storage       types.Storage
-	Marker        types.Marker
-	Queuer        types.Queuer
+	LogProvider  types.LoggerProvider
+	StatProvider types.StatsProvider
+	Storage      types.Storage
+	Marker       types.Marker
+	Queuer       types.Queuer
 }
 
 // Post creates a new digest
 func (h *DigesterHandler) Post(w http.ResponseWriter, r *http.Request) {
+	logger := h.LogProvider(r.Context())
 	start, stop, err := extractInput(r)
 	if err != nil {
-		h.ErrorCallback(r.Context(), http.StatusBadRequest, err)
+		logger.Info(logs.InvalidInput{Reason: err.Error()})
 		writeJSONResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -35,38 +38,42 @@ func (h *DigesterHandler) Post(w http.ResponseWriter, r *http.Request) {
 	switch err.(type) {
 	case nil:
 	case types.ErrInProgress:
-		h.ErrorCallback(r.Context(), http.StatusConflict, err)
+		logger.Info(logs.Conflict{Reason: err.Error()})
 		writeJSONResponse(w, http.StatusConflict, err.Error())
 		return
 	default:
-		h.ErrorCallback(r.Context(), http.StatusInternalServerError, err)
+		logger.Error(logs.DependencyFailure{Dependency: logs.DependencyStorage, Reason: err.Error()})
 		writeJSONResponse(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 	// if data is returned, a digest already exists. return 409 and exit
 	if exists {
 		msg := fmt.Sprintf("digest %s already exists", id)
+		logger.Info(logs.Conflict{Reason: msg})
 		writeJSONResponse(w, http.StatusConflict, msg)
 		return
 	}
 
 	if err = h.Queuer.Queue(r.Context(), id, start, stop); err != nil {
-		h.ErrorCallback(r.Context(), http.StatusInternalServerError, err)
+		logger.Error(logs.DependencyFailure{Dependency: logs.DependencyQueuer, Reason: err.Error()})
 		writeJSONResponse(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 
 	err = h.Marker.Mark(r.Context(), id)
-	h.ErrorCallback(r.Context(), http.StatusAccepted, err)
+	if err != nil {
+		logger.Error(logs.DependencyFailure{Dependency: logs.DependencyMarker, Reason: err.Error()})
+	}
 
 	w.WriteHeader(http.StatusAccepted)
 }
 
 // Get retrieves a digest
 func (h *DigesterHandler) Get(w http.ResponseWriter, r *http.Request) {
+	logger := h.LogProvider(r.Context())
 	start, stop, err := extractInput(r)
 	if err != nil {
-		h.ErrorCallback(r.Context(), http.StatusBadRequest, err)
+		logger.Info(logs.InvalidInput{Reason: err.Error()})
 		writeJSONResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -76,15 +83,14 @@ func (h *DigesterHandler) Get(w http.ResponseWriter, r *http.Request) {
 	case nil:
 		defer body.Close()
 	case types.ErrInProgress:
-		h.ErrorCallback(r.Context(), http.StatusNoContent, err)
 		w.WriteHeader(http.StatusNoContent)
 		return
 	case types.ErrNotFound:
-		h.ErrorCallback(r.Context(), http.StatusNotFound, err)
+		logger.Info(logs.NotFound{Reason: err.Error()})
 		w.WriteHeader(http.StatusNotFound)
 		return
 	default:
-		h.ErrorCallback(r.Context(), http.StatusInternalServerError, err)
+		logger.Error(logs.DependencyFailure{Dependency: logs.DependencyStorage, Reason: err.Error()})
 		writeJSONResponse(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
