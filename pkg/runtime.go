@@ -35,12 +35,9 @@ type Server interface {
 
 // Service is a container for all of the pluggable modules used by the service
 type Service struct {
-	// Transport is a custom RoundTripper to use with the default Queuer module.
-	// If no RoundTripper is provided, a default will be used.
-	Transport http.RoundTripper
-
-	// Decorators are a decorator chain to be used with the Queuer HTTP client
-	Decorators transport.Chain
+	// HTTPClient is the client to be used with the default Queuer module.
+	// If no client is provided, a default will be used.
+	HTTPClient *http.Client
 
 	// Queuer is responsible for queuing digester jobs which will eventually be consumed
 	// by the Produce handler. The built in Queuer POSTs to an HTTP endpoint.
@@ -72,29 +69,27 @@ func (s *Service) init() error {
 		if err != nil {
 			return err
 		}
-		if s.Decorators == nil {
+		if s.HTTPClient == nil {
 			retrier := transport.NewRetrier(
 				transport.NewFixedBackoffPolicy(50*time.Millisecond),
 				transport.NewLimitedRetryPolicy(3),
 				transport.NewStatusCodeRetryPolicy(500, 502, 503),
 			)
-			s.Decorators = transport.Chain{retrier}
-		}
-		if s.Transport == nil {
 			base := transport.NewFactory(
 				transport.OptionDefaultTransport,
 				transport.OptionDisableCompression(true),
 				transport.OptionTLSHandshakeTimeout(time.Second),
 				transport.OptionMaxIdleConns(100),
 			)
-			s.Transport = transport.NewRecycler(
-				s.Decorators.ApplyFactory(base),
+			recycler := transport.NewRecycler(
+				transport.Chain{retrier}.ApplyFactory(base),
 				transport.RecycleOptionTTL(10*time.Minute),
 				transport.RecycleOptionTTLJitter(time.Minute),
 			)
+			s.HTTPClient = &http.Client{Transport: recycler}
 		}
 		s.Queuer = &stream.DigestQueuer{
-			Client:   &http.Client{Transport: s.Transport},
+			Client:   s.HTTPClient,
 			Endpoint: streamApplianceURL,
 			Topic:    mustEnv("STREAM_APPLIANCE_TOPIC"),
 		}
