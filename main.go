@@ -14,7 +14,7 @@ func main() {
 	router := chi.NewRouter()
 	middleware := []func(http.Handler) http.Handler{
 		plugins.DefaultLogMiddleware(),
-		plugins.DefaultStatMiddleware(nil),
+		plugins.DefaultStatMiddleware(),
 	}
 	service := &digesterd.Service{Middleware: middleware}
 	if err := service.BindRoutes(router); err != nil {
