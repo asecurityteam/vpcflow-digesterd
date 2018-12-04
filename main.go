@@ -12,7 +12,11 @@ import (
 
 func main() {
 	router := chi.NewRouter()
-	service := &digesterd.Service{}
+	middleware := []func(http.Handler) http.Handler{
+		plugins.DefaultLogMiddleware(),
+		plugins.DefaultStatMiddleware(),
+	}
+	service := &digesterd.Service{Middleware: middleware}
 	if err := service.BindRoutes(router); err != nil {
 		panic(err.Error())
 	}
@@ -21,8 +25,6 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
-
-	// TODO: install standard set of middleware
 
 	server := &http.Server{
 		Addr:    ":" + port,

@@ -2,6 +2,7 @@ package v1
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -11,7 +12,9 @@ import (
 	"time"
 
 	"bitbucket.org/atlassian/go-vpcflow"
+	"bitbucket.org/atlassian/logevent"
 	"github.com/golang/mock/gomock"
+	"github.com/rs/xstats"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -50,8 +53,12 @@ func TestProduceBadRequst(t *testing.T) {
 	for _, tt := range tc {
 		t.Run(tt.Name, func(t *testing.T) {
 			r, _ := http.NewRequest(http.MethodPost, "/", ioutil.NopCloser(bytes.NewReader([]byte(tt.Payload))))
+			r = r.WithContext(logevent.NewContext(context.Background(), logevent.New(logevent.Config{Output: ioutil.Discard})))
 			w := httptest.NewRecorder()
-			handler := &Produce{}
+			handler := &Produce{
+				LogProvider:  logevent.FromContext,
+				StatProvider: xstats.FromContext,
+			}
 			handler.ServeHTTP(w, r)
 			assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
 		})
@@ -69,8 +76,11 @@ func TestDigestError(t *testing.T) {
 	stop := time.Now()
 	payload := []byte(fmt.Sprintf(payloadTpl, key, start.Format(time.RFC3339Nano), stop.Format(time.RFC3339Nano)))
 	r, _ := http.NewRequest(http.MethodPost, "/", ioutil.NopCloser(bytes.NewReader(payload)))
+	r = r.WithContext(logevent.NewContext(context.Background(), logevent.New(logevent.Config{Output: ioutil.Discard})))
 	w := httptest.NewRecorder()
 	handler := &Produce{
+		LogProvider:      logevent.FromContext,
+		StatProvider:     xstats.FromContext,
 		DigesterProvider: func(_, _ time.Time) vpcflow.Digester { return digesterMock },
 	}
 	handler.ServeHTTP(w, r)
@@ -91,8 +101,11 @@ func TestStorageError(t *testing.T) {
 	stop := time.Now()
 	payload := []byte(fmt.Sprintf(payloadTpl, key, start.Format(time.RFC3339Nano), stop.Format(time.RFC3339Nano)))
 	r, _ := http.NewRequest(http.MethodPost, "/", ioutil.NopCloser(bytes.NewReader(payload)))
+	r = r.WithContext(logevent.NewContext(context.Background(), logevent.New(logevent.Config{Output: ioutil.Discard})))
 	w := httptest.NewRecorder()
 	handler := &Produce{
+		LogProvider:      logevent.FromContext,
+		StatProvider:     xstats.FromContext,
 		Storage:          storageMock,
 		DigesterProvider: func(_, _ time.Time) vpcflow.Digester { return digesterMock },
 	}
@@ -117,8 +130,11 @@ func TestMarkerError(t *testing.T) {
 	stop := time.Now()
 	payload := []byte(fmt.Sprintf(payloadTpl, key, start.Format(time.RFC3339Nano), stop.Format(time.RFC3339Nano)))
 	r, _ := http.NewRequest(http.MethodPost, "/", ioutil.NopCloser(bytes.NewReader(payload)))
+	r = r.WithContext(logevent.NewContext(context.Background(), logevent.New(logevent.Config{Output: ioutil.Discard})))
 	w := httptest.NewRecorder()
 	handler := &Produce{
+		LogProvider:      logevent.FromContext,
+		StatProvider:     xstats.FromContext,
 		Storage:          storageMock,
 		Marker:           markerMock,
 		DigesterProvider: func(_, _ time.Time) vpcflow.Digester { return digesterMock },
@@ -144,8 +160,11 @@ func TestHappyPath(t *testing.T) {
 	stop := time.Now()
 	payload := []byte(fmt.Sprintf(payloadTpl, key, start.Format(time.RFC3339Nano), stop.Format(time.RFC3339Nano)))
 	r, _ := http.NewRequest(http.MethodPost, "/", ioutil.NopCloser(bytes.NewReader(payload)))
+	r = r.WithContext(logevent.NewContext(context.Background(), logevent.New(logevent.Config{Output: ioutil.Discard})))
 	w := httptest.NewRecorder()
 	handler := &Produce{
+		LogProvider:      logevent.FromContext,
+		StatProvider:     xstats.FromContext,
 		Storage:          storageMock,
 		Marker:           markerMock,
 		DigesterProvider: func(_, _ time.Time) vpcflow.Digester { return digesterMock },

@@ -2,6 +2,7 @@ package v1
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"io/ioutil"
 	"net/http"
@@ -9,8 +10,10 @@ import (
 	"testing"
 	"time"
 
+	"bitbucket.org/atlassian/logevent"
 	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/types"
 	"github.com/golang/mock/gomock"
+	"github.com/rs/xstats"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -33,7 +36,12 @@ func (m *timeMatcher) String() string {
 }
 
 func newHandlerFunc(storage types.Storage, queuer types.Queuer, method string) http.HandlerFunc {
-	handler := &DigesterHandler{Storage: storage, Queuer: queuer}
+	handler := &DigesterHandler{
+		LogProvider:  logevent.FromContext,
+		StatProvider: xstats.FromContext,
+		Storage:      storage,
+		Queuer:       queuer,
+	}
 	if method == http.MethodGet {
 		return handler.Get
 	}
@@ -94,6 +102,7 @@ func TestHTTPBadRequest(t *testing.T) {
 			q.Set("start", tt.Start)
 			q.Set("stop", tt.Stop)
 			r.URL.RawQuery = q.Encode()
+			r = r.WithContext(logevent.NewContext(context.Background(), logevent.New(logevent.Config{Output: ioutil.Discard})))
 
 			newHandlerFunc(nil, nil, tt.Method)(w, r)
 
@@ -139,12 +148,15 @@ func TestGetStorageErrors(t *testing.T) {
 			q.Set("start", start)
 			q.Set("stop", stop)
 			r.URL.RawQuery = q.Encode()
+			r = r.WithContext(logevent.NewContext(context.Background(), logevent.New(logevent.Config{Output: ioutil.Discard})))
 
 			storageMock := NewMockStorage(ctrl)
 			storageMock.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, tt.Error)
 
 			h := DigesterHandler{
-				Storage: storageMock,
+				LogProvider:  logevent.FromContext,
+				StatProvider: xstats.FromContext,
+				Storage:      storageMock,
 			}
 			h.Get(w, r)
 
@@ -166,6 +178,7 @@ func TestGetHappyPath(t *testing.T) {
 	q.Set("start", start)
 	q.Set("stop", stop)
 	r.URL.RawQuery = q.Encode()
+	r = r.WithContext(logevent.NewContext(context.Background(), logevent.New(logevent.Config{Output: ioutil.Discard})))
 
 	data := "this is the digest you're looking for"
 	readCloser := ioutil.NopCloser(bytes.NewReader([]byte(data)))
@@ -174,7 +187,9 @@ func TestGetHappyPath(t *testing.T) {
 	storageMock.EXPECT().Get(gomock.Any(), gomock.Any()).Return(readCloser, nil)
 
 	h := DigesterHandler{
-		Storage: storageMock,
+		LogProvider:  logevent.FromContext,
+		StatProvider: xstats.FromContext,
+		Storage:      storageMock,
 	}
 	h.Get(w, r)
 
@@ -200,12 +215,15 @@ func TestPostConflictInProgress(t *testing.T) {
 	q.Set("start", start)
 	q.Set("stop", stop)
 	r.URL.RawQuery = q.Encode()
+	r = r.WithContext(logevent.NewContext(context.Background(), logevent.New(logevent.Config{Output: ioutil.Discard})))
 
 	storageMock := NewMockStorage(ctrl)
 	storageMock.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(false, types.ErrInProgress{})
 
 	h := DigesterHandler{
-		Storage: storageMock,
+		LogProvider:  logevent.FromContext,
+		StatProvider: xstats.FromContext,
+		Storage:      storageMock,
 	}
 	h.Post(w, r)
 
@@ -225,12 +243,15 @@ func TestPostConflictDigestCreated(t *testing.T) {
 	q.Set("start", start)
 	q.Set("stop", stop)
 	r.URL.RawQuery = q.Encode()
+	r = r.WithContext(logevent.NewContext(context.Background(), logevent.New(logevent.Config{Output: ioutil.Discard})))
 
 	storageMock := NewMockStorage(ctrl)
 	storageMock.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil)
 
 	h := DigesterHandler{
-		Storage: storageMock,
+		LogProvider:  logevent.FromContext,
+		StatProvider: xstats.FromContext,
+		Storage:      storageMock,
 	}
 	h.Post(w, r)
 
@@ -250,12 +271,15 @@ func TestPostStorageError(t *testing.T) {
 	q.Set("start", start)
 	q.Set("stop", stop)
 	r.URL.RawQuery = q.Encode()
+	r = r.WithContext(logevent.NewContext(context.Background(), logevent.New(logevent.Config{Output: ioutil.Discard})))
 
 	storageMock := NewMockStorage(ctrl)
 	storageMock.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(false, errors.New("oops"))
 
 	h := DigesterHandler{
-		Storage: storageMock,
+		LogProvider:  logevent.FromContext,
+		StatProvider: xstats.FromContext,
+		Storage:      storageMock,
 	}
 	h.Post(w, r)
 
@@ -275,6 +299,7 @@ func TestPostQueueError(t *testing.T) {
 	q.Set("start", start.Format(time.RFC3339Nano))
 	q.Set("stop", stop.Format(time.RFC3339Nano))
 	r.URL.RawQuery = q.Encode()
+	r = r.WithContext(logevent.NewContext(context.Background(), logevent.New(logevent.Config{Output: ioutil.Discard})))
 
 	expectedStart := &timeMatcher{start.Truncate(time.Minute)}
 	expectedStop := &timeMatcher{stop.Truncate(time.Minute)}
@@ -285,8 +310,10 @@ func TestPostQueueError(t *testing.T) {
 	queuerMock.EXPECT().Queue(gomock.Any(), gomock.Any(), expectedStart, expectedStop).Return(errors.New("oops"))
 
 	h := DigesterHandler{
-		Storage: storageMock,
-		Queuer:  queuerMock,
+		LogProvider:  logevent.FromContext,
+		StatProvider: xstats.FromContext,
+		Storage:      storageMock,
+		Queuer:       queuerMock,
 	}
 	h.Post(w, r)
 
@@ -306,6 +333,7 @@ func TestPostHappyPath(t *testing.T) {
 	q.Set("start", start.Format(time.RFC3339Nano))
 	q.Set("stop", stop.Format(time.RFC3339Nano))
 	r.URL.RawQuery = q.Encode()
+	r = r.WithContext(logevent.NewContext(context.Background(), logevent.New(logevent.Config{Output: ioutil.Discard})))
 
 	expectedStart := &timeMatcher{start.Truncate(time.Minute)}
 	expectedStop := &timeMatcher{stop.Truncate(time.Minute)}
@@ -318,9 +346,11 @@ func TestPostHappyPath(t *testing.T) {
 	markerMock.EXPECT().Mark(gomock.Any(), gomock.Any()).Return(nil)
 
 	h := DigesterHandler{
-		Storage: storageMock,
-		Queuer:  queuerMock,
-		Marker:  markerMock,
+		LogProvider:  logevent.FromContext,
+		StatProvider: xstats.FromContext,
+		Storage:      storageMock,
+		Queuer:       queuerMock,
+		Marker:       markerMock,
 	}
 	h.Post(w, r)
 
@@ -340,6 +370,7 @@ func TestPostUnsuccessfulMark(t *testing.T) {
 	q.Set("start", start.Format(time.RFC3339Nano))
 	q.Set("stop", stop.Format(time.RFC3339Nano))
 	r.URL.RawQuery = q.Encode()
+	r = r.WithContext(logevent.NewContext(context.Background(), logevent.New(logevent.Config{Output: ioutil.Discard})))
 
 	expectedStart := &timeMatcher{start.Truncate(time.Minute)}
 	expectedStop := &timeMatcher{stop.Truncate(time.Minute)}
@@ -352,9 +383,11 @@ func TestPostUnsuccessfulMark(t *testing.T) {
 	markerMock.EXPECT().Mark(gomock.Any(), gomock.Any()).Return(errors.New("OOPS"))
 
 	h := DigesterHandler{
-		Storage: storageMock,
-		Queuer:  queuerMock,
-		Marker:  markerMock,
+		LogProvider:  logevent.FromContext,
+		StatProvider: xstats.FromContext,
+		Storage:      storageMock,
+		Queuer:       queuerMock,
+		Marker:       markerMock,
 	}
 	h.Post(w, r)
 

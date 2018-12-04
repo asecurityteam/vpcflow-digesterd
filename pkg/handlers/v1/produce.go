@@ -16,6 +16,8 @@ type payload struct {
 
 // Produce is a handler which performs the digest job, and stores the digest
 type Produce struct {
+	LogProvider      types.LoggerProvider
+	StatProvider     types.StatsProvider
 	Storage          types.Storage
 	Marker           types.Marker
 	DigesterProvider types.DigesterProvider
@@ -30,7 +32,8 @@ func (h *Produce) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if body.ID == "" {
-		writeTextResponse(w, http.StatusBadRequest, "missing ID field")
+		msg := "missing ID field"
+		writeTextResponse(w, http.StatusBadRequest, msg)
 		return
 	}
 
@@ -47,7 +50,8 @@ func (h *Produce) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !stop.After(start) {
-		writeTextResponse(w, http.StatusBadRequest, "invalid time range")
+		msg := "invalid time range"
+		writeTextResponse(w, http.StatusBadRequest, msg)
 		return
 	}
 

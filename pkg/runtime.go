@@ -35,6 +35,10 @@ type Server interface {
 
 // Service is a container for all of the pluggable modules used by the service
 type Service struct {
+	// Middleware is a list of service middleware to install on the router.
+	// The set of prepackaged middleware can be found in pkg/plugins.
+	Middleware []func(http.Handler) http.Handler
+
 	// HTTPClient is the client to be used with the default Queuer module.
 	// If no client is provided, a default will be used.
 	HTTPClient *http.Client
@@ -144,6 +148,7 @@ func (s *Service) BindRoutes(router chi.Router) error {
 		Marker:           s.Marker,
 		DigesterProvider: newDigester(vpcflowBucket, s3Client, maxBytes, maxConcurrent),
 	}
+	router.Use(s.Middleware...)
 	router.Post("/", digesterHandler.Post)
 	router.Get("/", digesterHandler.Get)
 	router.Post("/{topic}/{event}", produceHandler.ServeHTTP)
