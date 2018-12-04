@@ -129,7 +129,7 @@ func TestNotExists(t *testing.T) {
 		Bucket: aws.String(bucket),
 	}
 
-	aErr := awserr.New(s3.ErrCodeNoSuchKey, "", errors.New(""))
+	aErr := awserr.New("NotFound", "", errors.New(""))
 
 	mockS3 := NewMockS3API(ctrl)
 	mockS3.EXPECT().HeadObjectWithContext(gomock.Any(), expectedInput).Return(nil, aErr)

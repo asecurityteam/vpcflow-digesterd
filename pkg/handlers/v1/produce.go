@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/logs"
 	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/types"
 )
 
@@ -25,32 +26,38 @@ type Produce struct {
 
 // ServeHTTP handles incoming HTTP requests, and creates a vpc flow digest
 func (h *Produce) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	logger := h.LogProvider(r.Context())
 	var body payload
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		logger.Info(logs.InvalidInput{Reason: err.Error()})
 		writeTextResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if body.ID == "" {
 		msg := "missing ID field"
+		logger.Info(logs.InvalidInput{Reason: msg})
 		writeTextResponse(w, http.StatusBadRequest, msg)
 		return
 	}
 
 	start, err := time.Parse(time.RFC3339Nano, body.Start)
 	if err != nil {
+		logger.Info(logs.InvalidInput{Reason: err.Error()})
 		writeTextResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	stop, err := time.Parse(time.RFC3339Nano, body.Stop)
 	if err != nil {
+		logger.Info(logs.InvalidInput{Reason: err.Error()})
 		writeTextResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if !stop.After(start) {
 		msg := "invalid time range"
+		logger.Info(logs.InvalidInput{Reason: msg})
 		writeTextResponse(w, http.StatusBadRequest, msg)
 		return
 	}
@@ -58,11 +65,13 @@ func (h *Produce) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	digester := h.DigesterProvider(start, stop)
 	digest, err := digester.Digest()
 	if err != nil {
+		logger.Error(logs.DependencyFailure{Dependency: logs.DependencyDigester, Reason: err.Error()})
 		writeTextResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	defer digest.Close()
 	if err := h.Storage.Store(r.Context(), body.ID, digest); err != nil {
+		logger.Error(logs.DependencyFailure{Dependency: logs.DependencyStorage, Reason: err.Error()})
 		writeTextResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -71,6 +80,7 @@ func (h *Produce) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// report a failure to the caller signifying that the operation should be retried. This will
 	// hopefully mitigate the amount of invalid state occurrence we may incur
 	if err := h.Marker.Unmark(r.Context(), body.ID); err != nil {
+		logger.Error(logs.DependencyFailure{Dependency: logs.DependencyMarker, Reason: err.Error()})
 		writeTextResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}

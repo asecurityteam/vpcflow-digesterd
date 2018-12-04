@@ -87,7 +87,7 @@ func (s *S3) initUploader() {
 
 // If a key is not found, transform to our NotFound error, otherwise return original error
 func parseNotFound(err error, key string) error {
-	if aErr, ok := err.(awserr.Error); ok && aErr.Code() == s3.ErrCodeNoSuchKey {
+	if aErr, ok := err.(awserr.Error); ok && (aErr.Code() == s3.ErrCodeNoSuchKey || aErr.Code() == "NotFound") { // NotFound is an undocumented error code with no provided constant
 		return types.ErrNotFound{ID: key}
 	}
 	return err
