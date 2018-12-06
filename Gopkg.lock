@@ -3,11 +3,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:157dc8e4e32fe36ffc244a88c02078d01239f95bba031c614489067d0ce1410b"
+  digest = "1:8e5c115da0fa62bddebe1fb24075b702d1e77a6a8a8a1471a0cd6a78bc5f90a8"
   name = "bitbucket.org/atlassian/go-vpcflow"
   packages = ["."]
   pruneopts = "UT"
-  revision = "64bf78ee8f1855bb12783a3c70df6390c58a390a"
+  revision = "544b78755c38cb3881574b8cd5970a8d149d68b7"
 
 [[projects]]
   digest = "1:fc7ac93c8a978bd4ccbe0c85fdca0e7723d72be1f76feb2b162b970ae6276aa2"
@@ -29,7 +29,7 @@
   version = "1.1.0"
 
 [[projects]]
-  digest = "1:b57306537ed1e0ae5a1484b7f443a8678d762ca110bfa6e863657c0a30231899"
+  digest = "1:b784420b5885f66af1c165ac8def667a37360fd457a2e64e5d97845aaf65d1b5"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -71,8 +71,8 @@
     "service/sts",
   ]
   pruneopts = "UT"
-  revision = "8e2c30c1f0ce88ba42eff973f07ee5ebe521f1ee"
-  version = "v1.16.0"
+  revision = "130ebb7dc1d6b5a940198b47642fc8b20936a65d"
+  version = "v1.16.1"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
