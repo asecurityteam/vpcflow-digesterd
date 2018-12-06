@@ -3,11 +3,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:157dc8e4e32fe36ffc244a88c02078d01239f95bba031c614489067d0ce1410b"
+  digest = "1:8e5c115da0fa62bddebe1fb24075b702d1e77a6a8a8a1471a0cd6a78bc5f90a8"
   name = "bitbucket.org/atlassian/go-vpcflow"
   packages = ["."]
   pruneopts = "UT"
-  revision = "64bf78ee8f1855bb12783a3c70df6390c58a390a"
+  revision = "544b78755c38cb3881574b8cd5970a8d149d68b7"
 
 [[projects]]
   digest = "1:fc7ac93c8a978bd4ccbe0c85fdca0e7723d72be1f76feb2b162b970ae6276aa2"
@@ -29,7 +29,7 @@
   version = "1.1.0"
 
 [[projects]]
-  digest = "1:8454727f7783a48b64281b7ef9eb56636ea27c0a6704502e96d1383204bdda2b"
+  digest = "1:b784420b5885f66af1c165ac8def667a37360fd457a2e64e5d97845aaf65d1b5"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -41,6 +41,7 @@
     "aws/credentials",
     "aws/credentials/ec2rolecreds",
     "aws/credentials/endpointcreds",
+    "aws/credentials/processcreds",
     "aws/credentials/stscreds",
     "aws/csm",
     "aws/defaults",
@@ -70,8 +71,8 @@
     "service/sts",
   ]
   pruneopts = "UT"
-  revision = "ceab7b7ac6f535d1397f124620720b5145f1ad59"
-  version = "v1.15.88"
+  revision = "130ebb7dc1d6b5a940198b47642fc8b20936a65d"
+  version = "v1.16.1"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -173,7 +174,7 @@
   name = "golang.org/x/net"
   packages = ["context"]
   pruneopts = "UT"
-  revision = "fae4c4e3ad76c295c3d6d259f898136b4bf833a8"
+  revision = "351d144fa1fc0bd934e2408202be0c29f25e35a0"
 
 [solve-meta]
   analyzer-name = "dep"

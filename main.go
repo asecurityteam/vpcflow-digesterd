@@ -33,8 +33,8 @@ func main() {
 
 	r := &digesterd.Runtime{
 		Server: server,
-		ExitSignals: types.ExitSignals{
-			plugins.OS(),
+		ExitSignals: []types.ExitSignal{
+			plugins.OS,
 		},
 	}
 

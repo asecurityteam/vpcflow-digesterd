@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"bitbucket.org/atlassian/go-vpcflow"
+	"bitbucket.org/atlassian/logevent"
 	"bitbucket.org/atlassian/transport"
 	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/handlers/v1"
 	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/storage"
@@ -21,6 +22,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/go-chi/chi"
+	"github.com/rs/xstats"
 )
 
 // Server is an interface for starting/stopping an HTTP server
@@ -62,7 +64,7 @@ func (s *Service) init() error {
 	if err != nil {
 		return err
 	}
-	progressClient, err := createS3Client(mustEnv("DIGEST_PROGRESS_BUCKET"))
+	progressClient, err := createS3Client(mustEnv("DIGEST_PROGRESS_BUCKET_REGION"))
 	if err != nil {
 		return err
 	}
@@ -139,11 +141,15 @@ func (s *Service) BindRoutes(router chi.Router) error {
 		return err
 	}
 	digesterHandler := &v1.DigesterHandler{
-		Queuer:  s.Queuer,
-		Storage: s.Storage,
-		Marker:  s.Marker,
+		LogProvider:  logevent.FromContext,
+		StatProvider: xstats.FromContext,
+		Queuer:       s.Queuer,
+		Storage:      s.Storage,
+		Marker:       s.Marker,
 	}
 	produceHandler := &v1.Produce{
+		LogProvider:      logevent.FromContext,
+		StatProvider:     xstats.FromContext,
 		Storage:          s.Storage,
 		Marker:           s.Marker,
 		DigesterProvider: newDigester(vpcflowBucket, s3Client, maxBytes, maxConcurrent),
@@ -158,17 +164,17 @@ func (s *Service) BindRoutes(router chi.Router) error {
 // Runtime is the app configuration and execution point
 type Runtime struct {
 	Server      Server
-	ExitSignals types.ExitSignals
+	ExitSignals []types.ExitSignal
 }
 
 // Run runs the application
 func (r *Runtime) Run() error {
 	exit := make(chan error)
 
-	for _, c := range r.ExitSignals {
-		go func(c chan error) {
-			exit <- <-c
-		}(c)
+	for _, f := range r.ExitSignals {
+		go func(f func() chan error) {
+			exit <- <-f()
+		}(f)
 	}
 
 	go func() {

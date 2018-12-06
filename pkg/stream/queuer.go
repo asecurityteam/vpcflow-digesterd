@@ -43,7 +43,7 @@ func (q *DigestQueuer) Queue(ctx context.Context, id string, start, stop time.Ti
 		return err
 	}
 	defer res.Body.Close()
-	if res.StatusCode != http.StatusNoContent {
+	if res.StatusCode != http.StatusOK {
 		return fmt.Errorf("unexpected response from streaming appliance: %d", res.StatusCode)
 	}
 	return nil

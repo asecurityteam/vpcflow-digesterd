@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"bytes"
 	"context"
 	"sync"
 
@@ -25,6 +26,7 @@ func (m *ProgressMarker) Mark(ctx context.Context, key string) error {
 	_, err := m.uploader.UploadWithContext(ctx, &s3manager.UploadInput{
 		Bucket: aws.String(m.Bucket),
 		Key:    aws.String(key + inProgressSuffix),
+		Body:   bytes.NewReader([]byte("")),
 	})
 	return err
 }

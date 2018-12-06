@@ -48,7 +48,7 @@ func TestDigestQueuer(t *testing.T) {
 	expectedURL := fmt.Sprintf("%s/%s/event", baseURL, topic)
 	client := &http.Client{
 		Transport: &testRoundTripper{
-			StatusCode:  204,
+			StatusCode:  200,
 			ExpectedURL: expectedURL,
 		},
 	}
@@ -85,7 +85,7 @@ func TestRTError(t *testing.T) {
 	client := &http.Client{
 		Transport: &testRoundTripper{
 			Error:       errors.New("oops"),
-			StatusCode:  204,
+			StatusCode:  200,
 			ExpectedURL: expectedURL,
 		},
 	}

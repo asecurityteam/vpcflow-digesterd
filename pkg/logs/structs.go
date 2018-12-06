@@ -9,35 +9,38 @@ const (
 
 	// DependencyMarker identifies a marker failure
 	DependencyMarker = "marker"
+
+	// DependencyDigester identifies a digester failure
+	DependencyDigester = "digester"
 )
 
 // DependencyFailure is logged when a downstream dependency fails
 type DependencyFailure struct {
 	Dependency string `logevent:"dependency"`
-	Reason     string `xlogevent:"reason"`
-	Message    string `xlogevent:"message,default=dependency-failure"`
+	Reason     string `logevent:"reason"`
+	Message    string `logevent:"message,default=dependency-failure"`
 }
 
 // UnknownFailure is logged when an unexpected error occurs
 type UnknownFailure struct {
-	Reason  string `xlogevent:"reason"`
-	Message string `xlogevent:"message,default=unknown-failure"`
+	Reason  string `logevent:"reason"`
+	Message string `logevent:"message,default=unknown-failure"`
 }
 
 // InvalidInput is logged when the input provided is not valid
 type InvalidInput struct {
-	Reason  string `xlogevent:"reason"`
-	Message string `xlogevent:"message,default=invalid-input"`
+	Reason  string `logevent:"reason"`
+	Message string `logevent:"message,default=invalid-input"`
 }
 
 // NotFound is logged when the requested resource is not found
 type NotFound struct {
-	Reason  string `xlogevent:"reason"`
-	Message string `xlogevent:"message,default=not-found"`
+	Reason  string `logevent:"reason"`
+	Message string `logevent:"message,default=not-found"`
 }
 
 // Conflict is logged when the input provided is not valid
 type Conflict struct {
-	Reason  string `xlogevent:"reason"`
-	Message string `xlogevent:"message,default=conflict"`
+	Reason  string `logevent:"reason"`
+	Message string `logevent:"message,default=conflict"`
 }

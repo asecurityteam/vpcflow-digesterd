@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"testing"
@@ -19,6 +20,7 @@ func TestMarkInProgress(t *testing.T) {
 	expectedInput := &s3manager.UploadInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(key + "_in_progress"),
+		Body:   bytes.NewReader([]byte("")),
 	}
 
 	mockUploader := NewMockUploaderAPI(ctrl)
@@ -40,6 +42,7 @@ func TestMarkInProgressError(t *testing.T) {
 	expectedInput := &s3manager.UploadInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(key + "_in_progress"),
+		Body:   bytes.NewReader([]byte("")),
 	}
 
 	mockUploader := NewMockUploaderAPI(ctrl)
