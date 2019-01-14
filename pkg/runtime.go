@@ -18,6 +18,7 @@ import (
 	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/types"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
@@ -60,11 +61,11 @@ type Service struct {
 
 func (s *Service) init() error {
 	var err error
-	storageClient, err := createS3Client(mustEnv("DIGEST_STORAGE_BUCKET_REGION"))
+	storageClient, err := createS3Client(mustEnv("DIGEST_STORAGE_BUCKET_REGION"), os.Getenv("DIGEST_STORAGE_BUCKET_ROLE"))
 	if err != nil {
 		return err
 	}
-	progressClient, err := createS3Client(mustEnv("DIGEST_PROGRESS_BUCKET_REGION"))
+	progressClient, err := createS3Client(mustEnv("DIGEST_PROGRESS_BUCKET_REGION"), os.Getenv("DIGEST_PROGRESS_BUCKET_ROLE"))
 	if err != nil {
 		return err
 	}
@@ -136,7 +137,7 @@ func (s *Service) BindRoutes(router chi.Router) error {
 	if err != nil {
 		return err
 	}
-	s3Client, err := createS3Client(vpcflowRegion)
+	s3Client, err := createS3Client(vpcflowRegion, os.Getenv("VPC_FLOW_LOGS_BUCKET_ROLE"))
 	if err != nil {
 		return err
 	}
@@ -198,7 +199,7 @@ func mustEnv(key string) string {
 	return val
 }
 
-func createS3Client(region string) (*s3.S3, error) {
+func createS3Client(region, assumedRole string) (*s3.S3, error) {
 	useIAM := mustEnv("USE_IAM")
 	useIAMFlag, err := strconv.ParseBool(useIAM)
 	if err != nil {
@@ -218,6 +219,10 @@ func createS3Client(region string) (*s3.S3, error) {
 	awsSession, err := session.NewSession(cfg)
 	if err != nil {
 		return nil, err
+	}
+	if assumedRole != "" {
+		creds := stscreds.NewCredentials(awsSession, assumedRole)
+		return s3.New(awsSession, &aws.Config{Credentials: creds}), nil
 	}
 	return s3.New(awsSession), nil
 }
