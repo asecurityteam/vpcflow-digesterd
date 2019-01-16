@@ -3,11 +3,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:8e5c115da0fa62bddebe1fb24075b702d1e77a6a8a8a1471a0cd6a78bc5f90a8"
+  digest = "1:57762f709e5abf8b6b88add87b800cff3a1f34c7e48cdceec211908c1056a2ef"
   name = "bitbucket.org/atlassian/go-vpcflow"
   packages = ["."]
   pruneopts = "UT"
-  revision = "544b78755c38cb3881574b8cd5970a8d149d68b7"
+  revision = "9d1e932f3787f82f9eaead3005f1882e02fbd4c6"
 
 [[projects]]
   digest = "1:fc7ac93c8a978bd4ccbe0c85fdca0e7723d72be1f76feb2b162b970ae6276aa2"
@@ -29,7 +29,7 @@
   version = "1.1.0"
 
 [[projects]]
-  digest = "1:b784420b5885f66af1c165ac8def667a37360fd457a2e64e5d97845aaf65d1b5"
+  digest = "1:67e02ab3400bb59e93b4158c1c2e4468920718f9a21c80ba8af9b2c703086035"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -71,8 +71,8 @@
     "service/sts",
   ]
   pruneopts = "UT"
-  revision = "130ebb7dc1d6b5a940198b47642fc8b20936a65d"
-  version = "v1.16.1"
+  revision = "aabf189db35ba7eb5a35afe6d681fc0f70954fca"
+  version = "v1.16.18"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -91,20 +91,20 @@
   version = "v1.1.0"
 
 [[projects]]
-  digest = "1:b9914f85d95a0968bafd1be1908ba29e2eafafd88d6fd13696be42bf5368c380"
+  digest = "1:6b90c84e1800bd2d695b41ebc73a292641c481d1a61a7ec226db3c692885c26c"
   name = "github.com/go-chi/chi"
   packages = ["."]
   pruneopts = "UT"
-  revision = "b5294d10673813fac8558e7f47242bc9e61b4c25"
-  version = "v3.3.3"
+  revision = "08d9051ef6546d57c5dca8eae13e6df362e2d568"
+  version = "v3.3.4"
 
 [[projects]]
-  digest = "1:bc38c7c481812e178d85160472e231c5e1c9a7f5845d67e23ee4e706933c10d8"
+  digest = "1:b60efdeb75d3c0ceed88783ac2495256aba3491a537d0f31401202579fd62a94"
   name = "github.com/golang/mock"
   packages = ["gomock"]
   pruneopts = "UT"
-  revision = "c34cdb4725f4c3844d095133c6e40e448b86589b"
-  version = "v1.1.1"
+  revision = "51421b967af1f557f93a59e0057aaf15ca02e29c"
+  version = "v1.2.0"
 
 [[projects]]
   digest = "1:236d7e1bdb50d8f68559af37dbcf9d142d56b431c9b2176d41e2a009b664cda8"
@@ -115,11 +115,11 @@
   version = "v1.1.0"
 
 [[projects]]
-  digest = "1:e22af8c7518e1eab6f2eab2b7d7558927f816262586cd6ed9f349c97a6c285c4"
+  digest = "1:bb81097a5b62634f3e9fec1014657855610c82d19b9a40c17612e32651e35dca"
   name = "github.com/jmespath/go-jmespath"
   packages = ["."]
   pruneopts = "UT"
-  revision = "0b12d6b5"
+  revision = "c2b33e84"
 
 [[projects]]
   digest = "1:0028cb19b2e4c3112225cd871870f2d9cf49b9b4276531f03438a88e94be86fe"
@@ -161,12 +161,12 @@
   version = "v1.11.0"
 
 [[projects]]
-  digest = "1:18752d0b95816a1b777505a97f71c7467a8445b8ffb55631a7bf779f6ba4fa83"
+  digest = "1:972c2427413d41a1e06ca4897e8528e5a1622894050e2f527b38ddf0f343f759"
   name = "github.com/stretchr/testify"
   packages = ["assert"]
   pruneopts = "UT"
-  revision = "f35b8ab0b5a2cef36673838d662e249dd9c94686"
-  version = "v1.2.2"
+  revision = "ffdc059bfe9ce6a4e144ba849dbedead332c6053"
+  version = "v1.3.0"
 
 [[projects]]
   branch = "master"
@@ -174,7 +174,14 @@
   name = "golang.org/x/net"
   packages = ["context"]
   pruneopts = "UT"
-  revision = "351d144fa1fc0bd934e2408202be0c29f25e35a0"
+  revision = "915654e7eabcea33ae277abbecf52f0d8b7a9fdc"
+
+[[projects]]
+  digest = "1:a2bfab4bf4324c6b55e559e5585ae267c961d009d8eb1ff7f60038b322907e75"
+  name = "gonum.org/v1/gonum"
+  packages = ["graph/formats/dot/ast"]
+  pruneopts = "UT"
+  revision = "572d9101fe4fdede494f26999a59d09229b7c11b"
 
 [solve-meta]
   analyzer-name = "dep"
@@ -187,6 +194,7 @@
     "github.com/aws/aws-sdk-go/aws",
     "github.com/aws/aws-sdk-go/aws/awserr",
     "github.com/aws/aws-sdk-go/aws/credentials",
+    "github.com/aws/aws-sdk-go/aws/credentials/stscreds",
     "github.com/aws/aws-sdk-go/aws/request",
     "github.com/aws/aws-sdk-go/aws/session",
     "github.com/aws/aws-sdk-go/service/s3",

@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"bitbucket.org/atlassian/go-vpcflow"
@@ -18,6 +19,7 @@ import (
 	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/types"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
@@ -60,11 +62,11 @@ type Service struct {
 
 func (s *Service) init() error {
 	var err error
-	storageClient, err := createS3Client(mustEnv("DIGEST_STORAGE_BUCKET_REGION"))
+	storageClient, err := createS3Client(mustEnv("DIGEST_STORAGE_BUCKET_REGION"), os.Getenv("DIGEST_STORAGE_BUCKET_ROLE"))
 	if err != nil {
 		return err
 	}
-	progressClient, err := createS3Client(mustEnv("DIGEST_PROGRESS_BUCKET_REGION"))
+	progressClient, err := createS3Client(mustEnv("DIGEST_PROGRESS_BUCKET_REGION"), os.Getenv("DIGEST_PROGRESS_BUCKET_ROLE"))
 	if err != nil {
 		return err
 	}
@@ -136,7 +138,7 @@ func (s *Service) BindRoutes(router chi.Router) error {
 	if err != nil {
 		return err
 	}
-	s3Client, err := createS3Client(vpcflowRegion)
+	s3Client, err := createS3Client(vpcflowRegion, os.Getenv("VPC_FLOW_LOGS_BUCKET_ROLE"))
 	if err != nil {
 		return err
 	}
@@ -147,12 +149,17 @@ func (s *Service) BindRoutes(router chi.Router) error {
 		Storage:      s.Storage,
 		Marker:       s.Marker,
 	}
+	regions := strings.Split(os.Getenv("VPC_FLOW_LOGS_SCAN_REGIONS"), ",")
+	regionMap := make(map[string]bool)
+	for _, region := range regions {
+		regionMap[region] = true
+	}
 	produceHandler := &v1.Produce{
 		LogProvider:      logevent.FromContext,
 		StatProvider:     xstats.FromContext,
 		Storage:          s.Storage,
 		Marker:           s.Marker,
-		DigesterProvider: newDigester(vpcflowBucket, s3Client, maxBytes, maxConcurrent),
+		DigesterProvider: newDigester(vpcflowBucket, s3Client, maxBytes, maxConcurrent, regionMap),
 	}
 	router.Use(s.Middleware...)
 	router.Post("/", digesterHandler.Post)
@@ -198,7 +205,7 @@ func mustEnv(key string) string {
 	return val
 }
 
-func createS3Client(region string) (*s3.S3, error) {
+func createS3Client(region, assumedRole string) (*s3.S3, error) {
 	useIAM := mustEnv("USE_IAM")
 	useIAMFlag, err := strconv.ParseBool(useIAM)
 	if err != nil {
@@ -219,21 +226,33 @@ func createS3Client(region string) (*s3.S3, error) {
 	if err != nil {
 		return nil, err
 	}
+	if assumedRole != "" {
+		creds := stscreds.NewCredentials(awsSession, assumedRole)
+		return s3.New(awsSession, &aws.Config{Credentials: creds}), nil
+	}
 	return s3.New(awsSession), nil
 }
 
-func newDigester(bucket string, client s3iface.S3API, maxBytes int64, concurrency int) types.DigesterProvider {
+func newDigester(bucket string, client s3iface.S3API, maxBytes int64, concurrency int, regions map[string]bool) types.DigesterProvider {
 	return func(start, stop time.Time) vpcflow.Digester {
 		bucketIter := &vpcflow.BucketStateIterator{
 			Bucket: bucket,
 			Queue:  client,
 		}
-		filterIter := &vpcflow.BucketFilter{
-			BucketIterator: bucketIter,
-			Filter: vpcflow.LogFileTimeFilter{
+		filters := vpcflow.MultiLogFileFilter([]vpcflow.LogFileFilter{
+			vpcflow.LogFileTimeFilter{
 				Start: start,
 				End:   stop,
 			},
+		})
+		if len(regions) > 0 {
+			filters = append(filters, vpcflow.LogFileRegionFilter{
+				Region: regions,
+			})
+		}
+		filterIter := &vpcflow.BucketFilter{
+			BucketIterator: bucketIter,
+			Filter:         filters,
 		}
 		readerIter := &vpcflow.BucketIteratorReader{
 			BucketIterator: filterIter,
