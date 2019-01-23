@@ -154,12 +154,17 @@ func (s *Service) BindRoutes(router chi.Router) error {
 	for _, region := range regions {
 		regionMap[region] = true
 	}
+	accounts := strings.Split(os.Getenv("VPC_FLOW_LOGS_SCAN_ACCOUNTS"), ",")
+	accountMap := make(map[string]bool)
+	for _, account := range accounts {
+		accountMap[account] = true
+	}
 	produceHandler := &v1.Produce{
 		LogProvider:      logevent.FromContext,
 		StatProvider:     xstats.FromContext,
 		Storage:          s.Storage,
 		Marker:           s.Marker,
-		DigesterProvider: newDigester(vpcflowBucket, s3Client, maxBytes, maxConcurrent, regionMap),
+		DigesterProvider: newDigester(vpcflowBucket, s3Client, maxBytes, maxConcurrent, regionMap, accountMap),
 	}
 	router.Use(s.Middleware...)
 	router.Post("/", digesterHandler.Post)
@@ -233,7 +238,7 @@ func createS3Client(region, assumedRole string) (*s3.S3, error) {
 	return s3.New(awsSession), nil
 }
 
-func newDigester(bucket string, client s3iface.S3API, maxBytes int64, concurrency int, regions map[string]bool) types.DigesterProvider {
+func newDigester(bucket string, client s3iface.S3API, maxBytes int64, concurrency int, regions map[string]bool, accounts map[string]bool) types.DigesterProvider {
 	return func(start, stop time.Time) vpcflow.Digester {
 		bucketIter := &vpcflow.BucketStateIterator{
 			Bucket: bucket,
@@ -248,6 +253,11 @@ func newDigester(bucket string, client s3iface.S3API, maxBytes int64, concurrenc
 		if len(regions) > 0 {
 			filters = append(filters, vpcflow.LogFileRegionFilter{
 				Region: regions,
+			})
+		}
+		if len(accounts) > 0 {
+			filters = append(filters, vpcflow.LogFileAccountFilter{
+				Account: accounts,
 			})
 		}
 		filterIter := &vpcflow.BucketFilter{
