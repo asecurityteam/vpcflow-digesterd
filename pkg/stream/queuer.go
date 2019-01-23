@@ -19,7 +19,6 @@ type payload struct {
 // DigestQueuer is a Queuer implementation which queues digest jobs onto a streaming appliance
 type DigestQueuer struct {
 	Endpoint *url.URL
-	Topic    string
 	Client   *http.Client
 }
 
@@ -31,9 +30,7 @@ func (q *DigestQueuer) Queue(ctx context.Context, id string, start, stop time.Ti
 		Stop:  stop.Format(time.RFC3339Nano),
 	}
 	rawBody, _ := json.Marshal(body)
-	path, _ := url.Parse(fmt.Sprintf("%s/event", q.Topic))
-	u := q.Endpoint.ResolveReference(path)
-	req, err := http.NewRequest(http.MethodPost, u.String(), bytes.NewReader(rawBody))
+	req, err := http.NewRequest(http.MethodPost, q.Endpoint.String(), bytes.NewReader(rawBody))
 	if err != nil {
 		return err
 	}
