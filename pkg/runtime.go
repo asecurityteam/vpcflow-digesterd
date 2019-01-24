@@ -99,7 +99,6 @@ func (s *Service) init() error {
 		s.Queuer = &stream.DigestQueuer{
 			Client:   s.HTTPClient,
 			Endpoint: streamApplianceURL,
-			Topic:    mustEnv("STREAM_APPLIANCE_TOPIC"),
 		}
 	}
 	if s.Storage == nil {

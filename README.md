@@ -4,54 +4,54 @@
 
 ## Overview ##
 
-AWS VPC Flow Logs are a data source by which a team can detect anomalies in connection patterns, use of non-standard ports, 
-or even view the interconnections of systems. To assist in the consumption and analysis of these logs, vpcflow-digesterd 
+AWS VPC Flow Logs are a data source by which a team can detect anomalies in connection patterns, use of non-standard ports,
+or even view the interconnections of systems. To assist in the consumption and analysis of these logs, vpcflow-digesterd
 provides APIs for generating vpc flow log digests and for retrieving those digests.
 
 A digests is defined by a window of time specified in the `start` and `stop` REST API query parameters. See [api.yaml]( https://bitbucket.org/atlassian/vpcflow-digesterd/src/master/api.yaml) for more information.
 
-This project has two major components: an API to create and fetch digests, and a worker which performs the actual log compaction. 
+This project has two major components: an API to create and fetch digests, and a worker which performs the actual log compaction.
 This allows for multiple setups depending on your use case. For example, for the simplest setup, this project can run as a standalone
 service if `STREAM_APPLIANCE_ENDPOINT` is set to `0.0.0.0:<PORT>`. Another, more asynchronous setup would involve running vpcflow-digesterd
 as two services, with the API component producing to some event bus, and configuring the event bus to POST into the worker component.
 
 ## Modules ##
 
-The service struct in the digesterd package contains the modules used by this application. If none of these modules are configured, 
+The service struct in the digesterd package contains the modules used by this application. If none of these modules are configured,
 the built-in modules will be used.
 
 ```
 func main() {
 	...
-	
+
 	// Service created with default modules
 	service := &digesterd.Service{
 		Middleware: middleware,
 	}
-	
+
 	...
-} 
+}
 ```
 
 ### Storage ###
 
-This module is responsible for storing and retrieving the vpc log digests. The built-in storage module uses S3 as the store and 
-can be configured with the `DIGEST_STORAGE_BUCKET` and `DIGEST_STORAGE_BUCKET_REGION` environment variables. To use a custom storage 
+This module is responsible for storing and retrieving the vpc log digests. The built-in storage module uses S3 as the store and
+can be configured with the `DIGEST_STORAGE_BUCKET` and `DIGEST_STORAGE_BUCKET_REGION` environment variables. To use a custom storage
 module, implement the `types.Storage` interface and set the Storage attribute on the `digesterd.Service` struct in your `main.go`.
 
 ### Marker ###
 
-As previously described, the project components can be configured to run asynchronously. The Marker module is used to mark when a 
+As previously described, the project components can be configured to run asynchronously. The Marker module is used to mark when a
 digest is in progess of being created and when a digest is complete. The built-in Marker uses S3 as its backend and can be configured
-with the `DIGEST_PROGRESS_BUCKET` and `DIGEST_PROGRESS_BUCKET_REGION` environment variables. To use a custom marker module, implement 
+with the `DIGEST_PROGRESS_BUCKET` and `DIGEST_PROGRESS_BUCKET_REGION` environment variables. To use a custom marker module, implement
 the `types.Marker` interface and set the Marker attribute on the `digesterd.Service` struct in your `main.go`.
 
 ### Queuer ###
 
 This module is responsible for queuing digester jobs which will eventually be consumed by the Produce handler. The built-in Queuer POSTs
-to an HTTP endpoint. It can be configured with the `STREAM_APPLIANCE_ENDPOINT` and `STREAM_APPLIANCE_TOPIC` environment variables. This 
-project can be configured to run asynchronously if the queuer POSTs to some event bus and returns immdetiately, so long as a 200 response 
-from that event bus indicates that the digest job will eventually be POSTed to the worker component of the project. To use a custom queuer 
+to an HTTP endpoint. It can be configured with the `STREAM_APPLIANCE_ENDPOINT` environment variable. This
+project can be configured to run asynchronously if the queuer POSTs to some event bus and returns immdetiately, so long as a 200 response
+from that event bus indicates that the digest job will eventually be POSTed to the worker component of the project. To use a custom queuer
 module, implement the `types.Queuer` interface and set the Queuer attribute on the `digesterd.Service` struct in your `main.go`.
 
 ### HTTPClient ###

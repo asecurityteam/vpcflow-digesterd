@@ -16,7 +16,6 @@ import (
 
 const (
 	baseURL = "http://some.host"
-	topic   = "my-topic"
 )
 
 // testRoundTripper is a stub for testing requests made by an HTTP client
@@ -45,17 +44,15 @@ func (rt *testRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 
 func TestDigestQueuer(t *testing.T) {
 	endpoint, _ := url.Parse(baseURL)
-	expectedURL := fmt.Sprintf("%s/%s/event", baseURL, topic)
 	client := &http.Client{
 		Transport: &testRoundTripper{
 			StatusCode:  200,
-			ExpectedURL: expectedURL,
+			ExpectedURL: endpoint.String(),
 		},
 	}
 	dq := DigestQueuer{
 		Client:   client,
 		Endpoint: endpoint,
-		Topic:    topic,
 	}
 	err := dq.Queue(context.Background(), "digestId", time.Now(), time.Now())
 	assert.Nil(t, err)
@@ -63,17 +60,15 @@ func TestDigestQueuer(t *testing.T) {
 
 func TestUnexpectedResponse(t *testing.T) {
 	endpoint, _ := url.Parse(baseURL)
-	expectedURL := fmt.Sprintf("%s/%s/event", baseURL, topic)
 	client := &http.Client{
 		Transport: &testRoundTripper{
 			StatusCode:  500,
-			ExpectedURL: expectedURL,
+			ExpectedURL: endpoint.String(),
 		},
 	}
 	dq := DigestQueuer{
 		Client:   client,
 		Endpoint: endpoint,
-		Topic:    topic,
 	}
 	err := dq.Queue(context.Background(), "digestId", time.Now(), time.Now())
 	assert.NotNil(t, err)
@@ -81,18 +76,16 @@ func TestUnexpectedResponse(t *testing.T) {
 
 func TestRTError(t *testing.T) {
 	endpoint, _ := url.Parse(baseURL)
-	expectedURL := fmt.Sprintf("%s/%s/event", baseURL, topic)
 	client := &http.Client{
 		Transport: &testRoundTripper{
 			Error:       errors.New("oops"),
 			StatusCode:  200,
-			ExpectedURL: expectedURL,
+			ExpectedURL: endpoint.String(),
 		},
 	}
 	dq := DigestQueuer{
 		Client:   client,
 		Endpoint: endpoint,
-		Topic:    topic,
 	}
 	err := dq.Queue(context.Background(), "digestId", time.Now(), time.Now())
 	assert.NotNil(t, err)
