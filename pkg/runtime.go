@@ -155,7 +155,7 @@ func (s *Service) BindRoutes(router chi.Router) error {
 		StatProvider:     xstats.FromContext,
 		Storage:          s.Storage,
 		Marker:           s.Marker,
-		DigesterProvider: newDigester(vpcflowBucket, s3Client, maxBytes, maxConcurrent, regions, accounts),
+		DigesterProvider: newDigester(vpcflowBucket, s3Client, maxBytes, maxConcurrent, filterSlice(regions), filterSlice(accounts)),
 	}
 	router.Use(s.Middleware...)
 	router.Post("/", digesterHandler.Post)
@@ -259,4 +259,16 @@ func makePrefix(regions, accounts []string, date time.Time) string {
 	day := fmt.Sprintf(dayTpl, date.Day())
 	month := fmt.Sprintf(monthTpl, date.Month())
 	return fmt.Sprintf("AWSLogs/%s/vpcflowlogs/%s/%d/%s/%s", accounts[0], regions[0], date.Year(), month, day) // For now, we are focusing on one day for one region/account combination
+}
+
+// because splitting on an empty string will result in a slice with one element, [""],
+// we filter out invalid empty strings
+func filterSlice(slice []string) []string {
+	filtered := slice[:0]
+	for _, e := range slice {
+		if e != "" {
+			filtered = append(filtered, e)
+		}
+	}
+	return filtered
 }
