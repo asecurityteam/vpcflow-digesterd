@@ -234,7 +234,7 @@ func newDigester(bucket string, client s3iface.S3API, maxBytes int64, concurrenc
 		bucketIter := &vpcflow.BucketStateIterator{
 			Bucket: bucket,
 			Queue:  client,
-			Prefix: makePrefix(regions[0], accounts[0], start), // For now, we are focusing on one day for one region/account combination
+			Prefix: makePrefix(regions, accounts, start),
 		}
 		readerIter := &vpcflow.BucketIteratorReader{
 			BucketIterator: bucketIter,
@@ -244,7 +244,10 @@ func newDigester(bucket string, client s3iface.S3API, maxBytes int64, concurrenc
 	}
 }
 
-func makePrefix(region string, account string, date time.Time) string {
+func makePrefix(regions, accounts []string, date time.Time) string {
+	if len(regions) == 0 || len(accounts) == 0 {
+		return ""
+	}
 	dayTpl := "0%d"
 	monthTpl := "0%d"
 	if date.Day() > 9 {
@@ -255,5 +258,5 @@ func makePrefix(region string, account string, date time.Time) string {
 	}
 	day := fmt.Sprintf(dayTpl, date.Day())
 	month := fmt.Sprintf(monthTpl, date.Month())
-	return fmt.Sprintf("AWSLogs/%s/vpcflowlogs/%s/%d/%s/%s", account, region, date.Year(), month, day)
+	return fmt.Sprintf("AWSLogs/%s/vpcflowlogs/%s/%d/%s/%s", accounts[0], regions[0], date.Year(), month, day) // For now, we are focusing on one day for one region/account combination
 }
