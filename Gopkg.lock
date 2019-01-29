@@ -3,11 +3,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:981d726b1e5de2d9cba985d00795c4b89e1efd99bad2be2899bf2a7510e37c99"
+  digest = "1:c4a88f2c15c14553320639d68c94291487303d72ecec9d1454e4468b665f2d42"
   name = "bitbucket.org/atlassian/go-vpcflow"
   packages = ["."]
   pruneopts = "UT"
-  revision = "927ca926b52c24fb887572dbf35ccb66977ddffe"
+  revision = "5d1ae1604a53fdec51f88776000eb0e0e7f154ac"
 
 [[projects]]
   digest = "1:fc7ac93c8a978bd4ccbe0c85fdca0e7723d72be1f76feb2b162b970ae6276aa2"

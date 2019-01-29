@@ -149,21 +149,13 @@ func (s *Service) BindRoutes(router chi.Router) error {
 		Marker:       s.Marker,
 	}
 	regions := strings.Split(os.Getenv("VPC_FLOW_LOGS_SCAN_REGIONS"), ",")
-	regionMap := make(map[string]bool)
-	for _, region := range regions {
-		regionMap[region] = true
-	}
 	accounts := strings.Split(os.Getenv("VPC_FLOW_LOGS_SCAN_ACCOUNTS"), ",")
-	accountMap := make(map[string]bool)
-	for _, account := range accounts {
-		accountMap[account] = true
-	}
 	produceHandler := &v1.Produce{
 		LogProvider:      logevent.FromContext,
 		StatProvider:     xstats.FromContext,
 		Storage:          s.Storage,
 		Marker:           s.Marker,
-		DigesterProvider: newDigester(vpcflowBucket, s3Client, maxBytes, maxConcurrent, regionMap, accountMap),
+		DigesterProvider: newDigester(vpcflowBucket, s3Client, maxBytes, maxConcurrent, filterSlice(regions), filterSlice(accounts)),
 	}
 	router.Use(s.Middleware...)
 	router.Post("/", digesterHandler.Post)
@@ -237,36 +229,46 @@ func createS3Client(region, assumedRole string) (*s3.S3, error) {
 	return s3.New(awsSession), nil
 }
 
-func newDigester(bucket string, client s3iface.S3API, maxBytes int64, concurrency int, regions map[string]bool, accounts map[string]bool) types.DigesterProvider {
+func newDigester(bucket string, client s3iface.S3API, maxBytes int64, concurrency int, regions []string, accounts []string) types.DigesterProvider {
 	return func(start, stop time.Time) vpcflow.Digester {
 		bucketIter := &vpcflow.BucketStateIterator{
 			Bucket: bucket,
 			Queue:  client,
-		}
-		filters := vpcflow.MultiLogFileFilter([]vpcflow.LogFileFilter{
-			vpcflow.LogFileTimeFilter{
-				Start: start,
-				End:   stop,
-			},
-		})
-		if len(regions) > 0 {
-			filters = append(filters, vpcflow.LogFileRegionFilter{
-				Region: regions,
-			})
-		}
-		if len(accounts) > 0 {
-			filters = append(filters, vpcflow.LogFileAccountFilter{
-				Account: accounts,
-			})
-		}
-		filterIter := &vpcflow.BucketFilter{
-			BucketIterator: bucketIter,
-			Filter:         filters,
+			Prefix: makePrefix(regions, accounts, start),
 		}
 		readerIter := &vpcflow.BucketIteratorReader{
-			BucketIterator: filterIter,
+			BucketIterator: bucketIter,
 			FetchPolicy:    vpcflow.NewPrefetchPolicy(client, maxBytes, concurrency),
 		}
 		return &vpcflow.ReaderDigester{Reader: readerIter}
 	}
+}
+
+func makePrefix(regions, accounts []string, date time.Time) string {
+	if len(regions) == 0 || len(accounts) == 0 {
+		return ""
+	}
+	dayTpl := "0%d"
+	monthTpl := "0%d"
+	if date.Day() > 9 {
+		dayTpl = "%d"
+	}
+	if int(date.Month()) > 9 {
+		monthTpl = "%d"
+	}
+	day := fmt.Sprintf(dayTpl, date.Day())
+	month := fmt.Sprintf(monthTpl, date.Month())
+	return fmt.Sprintf("AWSLogs/%s/vpcflowlogs/%s/%d/%s/%s", accounts[0], regions[0], date.Year(), month, day) // For now, we are focusing on one day for one region/account combination
+}
+
+// because splitting on an empty string will result in a slice with one element, [""],
+// we filter out invalid empty strings
+func filterSlice(slice []string) []string {
+	filtered := slice[:0]
+	for _, e := range slice {
+		if e != "" {
+			filtered = append(filtered, e)
+		}
+	}
+	return filtered
 }
