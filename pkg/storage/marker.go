@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"sync"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -18,15 +19,20 @@ type ProgressMarker struct {
 	Client   s3iface.S3API
 	uploader s3manageriface.UploaderAPI
 	lock     sync.Mutex
+	now      func() time.Time
 }
 
 // Mark flags the digest identified by key as being "in progress"
 func (m *ProgressMarker) Mark(ctx context.Context, key string) error {
 	m.initUploader()
+	now := m.now
+	if now == nil {
+		now = time.Now
+	}
 	_, err := m.uploader.UploadWithContext(ctx, &s3manager.UploadInput{
 		Bucket: aws.String(m.Bucket),
 		Key:    aws.String(key + inProgressSuffix),
-		Body:   bytes.NewReader([]byte("")),
+		Body:   bytes.NewReader([]byte(now().Format(time.RFC3339Nano))),
 	})
 	return err
 }
