@@ -115,7 +115,7 @@ Exit signals in this project are used to signal the service to perform a gracefu
 | DIGEST\_PROGRESS\_BUCKET      |    Yes   | The name of the S3 bucket used to store digest progress states                                                                  | vpc-flow-digests-progress                       |
 | DIGEST\_PROGRESS\_BUCKET\_REGION      |    Yes   | The region of the S3 bucket used to store digest progress states            | us-west-2                       |
 | DIGEST\_PROGRESS\_BUCKET\_ROLE      |    No   | Role ARN to assume which grants read access to the digest progress bucket                                                                     | arn:aws:iam::account-id:role/role-name                   |
-| DIGEST\_PROGRESS\_TIMEOUT			  |    Yes  | Time, in milliseconds, after which an in progress marker is considered invalid																		|
+| DIGEST\_PROGRESS\_TIMEOUT			  |    Yes  | Time, in milliseconds, after which an in progress marker is considered invalid					| 100000 |
 | STREAM\_APPLIANCE\_ENDPOINT   |    Yes   | Endpoint for the service which queues digests to be created. | http://ec2-event-bus.us-west-2.compute.amazonaws.com |
 | STREAM\_APPLIANCE\_TOPIC      |    Yes   | Event bus name.                                                  | digest-queue                                    |
 | USE\_IAM                     |    Yes   | true or false. Set this flag to true if your application will be assuming an IAM role to read and write to the S3 buckets. This is recommended if you are deploying your application to an ec2 instance.       | true                                            |
