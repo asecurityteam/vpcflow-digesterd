@@ -102,6 +102,11 @@ func (s *Service) init() error {
 		}
 	}
 	if s.Storage == nil {
+		progressTimeoutStr := mustEnv("DIGEST_PROGRESS_TIMEOUT")
+		progressTimeoutInt, err := strconv.Atoi(progressTimeoutStr)
+		if err != nil {
+			return err
+		}
 		s.Storage = &storage.InProgress{
 			Bucket: mustEnv("DIGEST_PROGRESS_BUCKET"),
 			Client: progressClient,
@@ -109,6 +114,7 @@ func (s *Service) init() error {
 				Bucket: mustEnv("DIGEST_STORAGE_BUCKET"),
 				Client: storageClient,
 			},
+			Timeout: time.Millisecond * time.Duration(progressTimeoutInt),
 		}
 	}
 	if s.Marker == nil {
