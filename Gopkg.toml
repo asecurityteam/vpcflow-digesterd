@@ -16,15 +16,15 @@
   version = "1.15.55"
 
 [[constraint]]
-  name = "bitbucket.org/atlassian/go-vpcflow"
+  name = "github.com/asecurityteam/go-vpcflow"
   branch = "master"
 
 [[constraint]]
-  name = "bitbucket.org/atlassian/transport"
+  name = "github.com/asecurityteam/transport"
   version = "^1.1.1"
 
 [[constraint]]
-  name = "bitbucket.org/atlassian/logevent"
+  name = "github.com/asecurityteam/logevent"
   version = "^1.0.2"
 
 [[constraint]]

@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/logs"
-	"bitbucket.org/atlassian/vpcflow-digesterd/pkg/types"
+	"github.com/asecurityteam/vpcflow-digesterd/pkg/logs"
+	"github.com/asecurityteam/vpcflow-digesterd/pkg/types"
 	"github.com/google/uuid"
 )
 
