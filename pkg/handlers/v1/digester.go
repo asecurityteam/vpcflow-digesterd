@@ -17,8 +17,8 @@ var digestNamespace = uuid.NewSHA1(uuid.Nil, []byte("digest"))
 
 // DigesterHandler handles incoming HTTP requests for starting and retrieving new digests
 type DigesterHandler struct {
-	LogProvider  types.LoggerProvider
-	StatProvider types.StatsProvider
+	LogProvider  types.LogFn
+	StatProvider types.StatFn
 	Storage      types.Storage
 	Marker       types.Marker
 	Queuer       types.Queuer
