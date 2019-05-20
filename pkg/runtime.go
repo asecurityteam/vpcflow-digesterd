@@ -1,7 +1,6 @@
 package digesterd
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -11,9 +10,8 @@ import (
 	"time"
 
 	"github.com/asecurityteam/go-vpcflow"
-	"github.com/asecurityteam/logevent"
 	"github.com/asecurityteam/transport"
-	"github.com/asecurityteam/vpcflow-digesterd/pkg/handlers/v1"
+	v1 "github.com/asecurityteam/vpcflow-digesterd/pkg/handlers/v1"
 	"github.com/asecurityteam/vpcflow-digesterd/pkg/storage"
 	"github.com/asecurityteam/vpcflow-digesterd/pkg/stream"
 	"github.com/asecurityteam/vpcflow-digesterd/pkg/types"
@@ -24,23 +22,11 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/go-chi/chi"
-	"github.com/rs/xstats"
 )
-
-// Server is an interface for starting/stopping an HTTP server
-type Server interface {
-	// ListenAndServe starts the HTTP server in a blocking call.
-	ListenAndServe() error
-	// Shutdown stops the server from accepting new connections.
-	// If the given context expires before shutdown is complete then
-	// the context error is returned.
-	Shutdown(ctx context.Context) error
-}
 
 // Service is a container for all of the pluggable modules used by the service
 type Service struct {
 	// Middleware is a list of service middleware to install on the router.
-	// The set of prepackaged middleware can be found in pkg/plugins.
 	Middleware []func(http.Handler) http.Handler
 
 	// HTTPClient is the client to be used with the default Queuer module.
@@ -148,8 +134,8 @@ func (s *Service) BindRoutes(router chi.Router) error {
 		return err
 	}
 	digesterHandler := &v1.DigesterHandler{
-		LogProvider:  logevent.FromContext,
-		StatProvider: xstats.FromContext,
+		LogProvider:  types.LoggerFromContext,
+		StatProvider: types.StatFromContext,
 		Queuer:       s.Queuer,
 		Storage:      s.Storage,
 		Marker:       s.Marker,
@@ -157,8 +143,8 @@ func (s *Service) BindRoutes(router chi.Router) error {
 	regions := strings.Split(os.Getenv("VPC_FLOW_LOGS_SCAN_REGIONS"), ",")
 	accounts := strings.Split(os.Getenv("VPC_FLOW_LOGS_SCAN_ACCOUNTS"), ",")
 	produceHandler := &v1.Produce{
-		LogProvider:      logevent.FromContext,
-		StatProvider:     xstats.FromContext,
+		LogProvider:      types.LoggerFromContext,
+		StatProvider:     types.StatFromContext,
 		Storage:          s.Storage,
 		Marker:           s.Marker,
 		DigesterProvider: newDigester(vpcflowBucket, s3Client, maxBytes, maxConcurrent, filterSlice(regions), filterSlice(accounts)),
@@ -168,35 +154,6 @@ func (s *Service) BindRoutes(router chi.Router) error {
 	router.Get("/", digesterHandler.Get)
 	router.Post("/{topic}/{event}", produceHandler.ServeHTTP)
 	return nil
-}
-
-// Runtime is the app configuration and execution point
-type Runtime struct {
-	Server      Server
-	ExitSignals []types.ExitSignal
-}
-
-// Run runs the application
-func (r *Runtime) Run() error {
-	exit := make(chan error)
-
-	for _, f := range r.ExitSignals {
-		go func(f func() chan error) {
-			exit <- <-f()
-		}(f)
-	}
-
-	go func() {
-		exit <- r.Server.ListenAndServe()
-	}()
-
-	err := <-exit
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	_ = r.Server.Shutdown(ctx)
-
-	return err
 }
 
 func mustEnv(key string) string {

@@ -1,44 +1,35 @@
 package main
 
 import (
-	"net/http"
+	"context"
 	"os"
 
-	"github.com/asecurityteam/vpcflow-digesterd/pkg"
-	"github.com/asecurityteam/vpcflow-digesterd/pkg/plugins"
-	"github.com/asecurityteam/vpcflow-digesterd/pkg/types"
+	"github.com/asecurityteam/runhttp"
+	"github.com/asecurityteam/settings"
+	digesterd "github.com/asecurityteam/vpcflow-digesterd/pkg"
 	"github.com/go-chi/chi"
 )
 
 func main() {
 	router := chi.NewRouter()
-	middleware := []func(http.Handler) http.Handler{
-		plugins.DefaultLogMiddleware(),
-		plugins.DefaultStatMiddleware(),
-	}
-	service := &digesterd.Service{Middleware: middleware}
+	service := &digesterd.Service{}
 	if err := service.BindRoutes(router); err != nil {
 		panic(err.Error())
 	}
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	source, err := settings.NewEnvSource(os.Environ())
+	if err != nil {
+		panic(err.Error())
 	}
 
-	server := &http.Server{
-		Addr:    ":" + port,
-		Handler: router,
+	// Load the runtime using the Source and Handler.
+	rt, err := runhttp.New(context.Background(), source, router)
+	if err != nil {
+		panic(err.Error())
 	}
 
-	r := &digesterd.Runtime{
-		Server: server,
-		ExitSignals: []types.ExitSignal{
-			plugins.OS,
-		},
-	}
-
-	if err := r.Run(); err != nil {
+	// Run the HTTP server.
+	if err := rt.Run(); err != nil {
 		panic(err.Error())
 	}
 }
