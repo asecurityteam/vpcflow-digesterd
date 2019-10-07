@@ -1,5 +1,6 @@
 <a id="markdown-vpcflow-digesterd-a-service-which-creates-stores-and-fetches-digests-for-vpc-flow-logs" name="vpcflow-digesterd-a-service-which-creates-stores-and-fetches-digests-for-vpc-flow-logs"></a>
 # vpcflow-digesterd A service which creates, stores, and fetches digests for VPC flow logs #
+[![GoDoc](https://godoc.org/github.com/asecurityteam/vpcflow-digesterd?status.svg)](https://godoc.org/github.com/asecurityteam/vpcflow-digesterd)
 
 *Status: Incubation*
 
