@@ -1,7 +1,7 @@
 <a id="markdown-vpcflow-digesterd-a-service-which-creates-stores-and-fetches-digests-for-vpc-flow-logs" name="vpcflow-digesterd-a-service-which-creates-stores-and-fetches-digests-for-vpc-flow-logs"></a>
 # vpcflow-digesterd A service which creates, stores, and fetches digests for VPC flow logs #
 [![GoDoc](https://godoc.org/github.com/asecurityteam/vpcflow-digesterd?status.svg)](https://godoc.org/github.com/asecurityteam/vpcflow-digesterd)
-[![Build Status](https://travis-ci.org/asecurityteam/vpcflow-digesterd.png?branch=master)](https://travis-ci.org/asecurityteam/vpcflow-digesterd)
+[![Build Status](https://travis-ci.com/asecurityteam/vpcflow-digesterd.png?branch=master)](https://travis-ci.com/asecurityteam/vpcflow-digesterd)
 [![codecov.io](https://codecov.io/github/asecurityteam/vpcflow-digesterd/coverage.svg?branch=master)](https://codecov.io/github/asecurityteam/vpcflow-digesterd?branch=master)
 
 *Status: Incubation*
